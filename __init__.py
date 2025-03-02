@@ -1,4 +1,3 @@
-from .rendering.pyglet_tilemap_renderer import PygletTilemapRenderer
 from .tile.autotile.autotile_tile import AutotileTile
 from .tile.autotile.autotile_rule import AutotileRule
 from .tile.tile import Tile
@@ -15,7 +14,6 @@ __all__ = [
     "Tilemap",
     "TilemapLayer",
     "Tileset",
-    "PygletTilemapRenderer",
     "TilemapBorderTracer",
     "PymunkTilemapPhysics",
 ]

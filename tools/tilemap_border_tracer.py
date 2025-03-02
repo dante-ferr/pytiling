@@ -59,16 +59,16 @@ class TilemapBorderTracer:
         self.tilemap_layer = tilemap_layer
         self.nodes: dict[tuple[int, int], Node] = {}
         self.lines: set[Line] = set()
-        self.format_callbacks: list[Callable] = []
+        self.create_tile_callback: list[Callable] = []
 
-        tilemap_layer.add_individual_format_callback(self._on_tile_format)
+        tilemap_layer.add_create_tile_callback(self._handle_create_tile)
 
-    def add_format_callback(self, callback: Callable):
-        """Add a callback to be called when the tilemap is formatted, after the _on_tile_format code is executed."""
-        self.format_callbacks.append(callback)
+    def add_create_tile_callback(self, callback: Callable):
+        """Add a callback to be called when a tile is created. This ensures that the borders area already updated before the callback is executed."""
+        self.create_tile_callback.append(callback)
 
-    def _on_tile_format(self, tile: Tile):
-        """Executed when a tile is formatted. This function will check if the tile is a border tile and if it is, it will create lines in the tilemap border."""
+    def _handle_create_tile(self, tile: Tile):
+        """Executed when a tile is added. This function will check if the tile is a border tile and if it is, it will create lines in the tilemap border."""
         neighbors = self.tilemap_layer.get_neighbors_of(
             tile,
             same_autotile_object=True,
@@ -100,7 +100,7 @@ class TilemapBorderTracer:
         handle_neighbor((x - 1, y), ((x, y), (x, y + 1)), "vertical")
         handle_neighbor((x, y + 1), ((x, y + 1), (x + 1, y + 1)), "horizontal")
 
-        for callback in self.format_callbacks:
+        for callback in self.create_tile_callback:
             callback(tile)
 
     def _process_border(

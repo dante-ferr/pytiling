@@ -12,7 +12,7 @@ class PymunkTilemapPhysics:
         self.space.add(self.body)
 
         self.lines = []
-        border_tracer.add_format_callback(self.create_lines)
+        border_tracer.add_create_tile_callback(self.create_lines)
 
     def create_lines(self, tile):
         # Remove all previously added lines

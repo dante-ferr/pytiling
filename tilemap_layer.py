@@ -1,10 +1,11 @@
-from typing import TypedDict, Literal, Any, Callable
+from typing import TypedDict, Literal, Any, Callable, cast, TYPE_CHECKING
 from .tile.tile import Tile
 import numpy as np
 from .tileset import Tileset
 from .tile.autotile.autotile_rule import AutotileRule
 from .tile.autotile.default_autotile_rules import default_rules
 from .tile.autotile.autotile_tile import AutotileTile
+from numpy.typing import NDArray
 
 
 class Area(TypedDict):
@@ -22,25 +23,24 @@ class TilemapLayer:
         self.tileset = tileset
         self.autotile_rules = {}
 
+        self.create_tile_callbacks: list[Callable] = []
         self.format_callbacks: list[Callable] = []
-        self.individual_format_callbacks: list[Callable] = []
 
     def initialize_grid(self, size: tuple[int, int]):
         """Initialize the grid of the tilemap layer."""
-        self.grid = np.empty(size, dtype=Tile)
+        self.grid = np.empty(size, dtype=object)
 
     def set_size(self, size: tuple[int, int]):
         """Change the size of the grid."""
         np.resize(self.grid, size)
 
-    def add_format_callback(self, *callbacks: Callable):
-        """Add a callback to be called when the any tile in the layer is formatted."""
-        for callback in callbacks:
-            self.format_callbacks.append(callback)
+    def add_create_tile_callback(self, callback: Callable):
+        """Add a callback to be called when any tile in the layer is formatted."""
+        self.create_tile_callbacks.append(callback)
 
-    def add_individual_format_callback(self, *callbacks: Callable):
-        for callback in callbacks:
-            self.individual_format_callbacks.append(callback)
+    def add_format_callback(self, callback: Callable):
+        """Add a callback to be called when any tile in the layer is formatted."""
+        self.format_callbacks.append(callback)
 
     def add_tile(self, tile: Tile, apply_formatting=True):
         """Add a tile to the grid."""
@@ -61,7 +61,7 @@ class TilemapLayer:
             raise ValueError(
                 f"Tile position ({tile.position}) is out of bounds for the grid ({self.grid.shape})."
             )
-        if self.grid[tile.position[1], tile.position[0]] is not None:
+        if self.get_tile(tile.position) is not None:
             return
 
         tile.set_layer(self)
@@ -76,8 +76,8 @@ class TilemapLayer:
         self.grid[tile.position[1], tile.position[0]] = tile
 
         if apply_formatting:
-            self.format(self._get_area_around(tile.position, 1))
-            for callback in self.individual_format_callbacks:
+            self.format_area(self._get_area_around(tile.position, 1))
+            for callback in self.create_tile_callbacks:
                 callback(tile)
 
     def add_autotile_rule(self, autotile_object, *rules):
@@ -89,7 +89,7 @@ class TilemapLayer:
         """Set the list of rules for a specific autotile object. It resets the rules for that object, so it must be used when it's needed to overwrite the default rules."""
         self.autotile_rules[autotile_object] = rules
 
-    def format(self, area: Area | Literal["all"] = "all"):
+    def format_area(self, area: Area | Literal["all"] = "all"):
         """Format the grid of tiles."""
         radius = 2
         if area == "all":
@@ -99,9 +99,11 @@ class TilemapLayer:
             )
 
         def tile_format_callback(x, y):
-            tile = self.grid[y, x]
+            tile = self.get_tile((x, y))
             if tile is not None:
                 tile.format()
+                for callback in self.format_callbacks:
+                    callback(tile)
 
         self._loop_over_area(area, tile_format_callback)
 
@@ -120,6 +122,7 @@ class TilemapLayer:
             raise ValueError(
                 "Tile position cannot be None. Ensure to set the position of the tile before getting its neighbors."
             )
+
         neighbors: Any
 
         matrix_size = radius * 2 + 1
@@ -135,26 +138,32 @@ class TilemapLayer:
 
         def tile_neighbors_callback(x, y):
             nonlocal neighbors
+            nonlocal tile
+            if tile.position is None:
+                return
+            tile_position: tuple[int, int] = tile.position
 
             if x == tile.position[0] and y == tile.position[1]:
                 return
-            neighbor = self.grid[y, x]
+            neighbor = self.get_tile((x, y))
             if neighbor is None:
                 return
-            if (
-                same_autotile_object
-                and neighbor.autotile_object is not None
-                and neighbor.autotile_object != tile.autotile_object
-            ):
-                return
+            if same_autotile_object:
+                tile = cast(AutotileTile, tile)
+                neighbor = cast(AutotileTile, neighbor)
+                if (
+                    neighbor.autotile_object is not None
+                    and neighbor.autotile_object != tile.autotile_object
+                ):
+                    return
 
             if output_type == "tile_grid":
                 neighbors[
-                    y - tile.position[1] + radius, x - tile.position[0] + radius
+                    y - tile_position[1] + radius, x - tile_position[0] + radius
                 ] = neighbor
             elif output_type == "bool_grid":
                 neighbors[
-                    y - tile.position[1] + radius, x - tile.position[0] + radius
+                    y - tile_position[1] + radius, x - tile_position[0] + radius
                 ] = True
             elif output_type == "amount":
                 neighbors += 1
@@ -179,6 +188,12 @@ class TilemapLayer:
                     tile_neighbors_callback(*position)
 
         return neighbors
+
+    def get_tile(self, position: tuple[int, int]):
+        """Get a tile at a given position."""
+        if self._position_is_valid(position):
+            return cast(Tile, self.grid[position[1], position[0]])
+        return None
 
     def _loop_over_area(self, area: Area, callback):
         """Loop over an area of the grid and call a callback function for each tile in the area."""
@@ -214,7 +229,7 @@ class TilemapLayer:
 
     def tilemap_pos_to_actual_pos(
         self, position: tuple[int, int], invert_x_axis=False, invert_y_axis=True
-    ):
+    ) -> tuple[float, float]:
         """Convert a tile position in the tilemap layer to an actual position in the window."""
         tile_width, tile_height = self.tile_size
         map_width, map_height = self.size
@@ -225,7 +240,7 @@ class TilemapLayer:
         if invert_y_axis:
             pos[1] = map_height - pos[1]
 
-        return (*pos,)
+        return (pos[0], pos[1])
 
     def actual_pos_to_tilemap_pos(
         self, position: tuple[int, int], invert_x_axis=False, invert_y_axis=True
