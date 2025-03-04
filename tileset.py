@@ -22,7 +22,7 @@ class Tileset:
         self.tile_images = self._get_tile_images()
 
     def _get_tile_images(self):
-        tile_images = np.empty((self.size[1], self.size[0]), dtype=Any)
+        tile_images = np.empty((self.size[1], self.size[0]), dtype=object)
 
         tile_width, tile_height = self.tile_size
 

@@ -243,7 +243,7 @@ class TilemapLayer:
         return (pos[0], pos[1])
 
     def actual_pos_to_tilemap_pos(
-        self, position: tuple[int, int], invert_x_axis=False, invert_y_axis=True
+        self, position: tuple[float, float], invert_x_axis=False, invert_y_axis=True
     ):
         """Convert an actual position in the window to a tile position in the tilemap layer."""
         tile_width, tile_height = self.tile_size
