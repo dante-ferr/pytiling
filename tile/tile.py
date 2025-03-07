@@ -9,14 +9,14 @@ class Tile:
     """A class representing a tile. It contains information about its position, object type, and display. It also has a potential displays dictionary, which stores the chances of each display being chosen."""
 
     potential_displays_chance_sum = 0.0
+    display: tuple[int, int]
 
     def __init__(
         self,
         position: tuple[int, int] | None = None,
-        display: tuple[int, int] | None = None,
+        display: tuple[int, int] = (0, 0),
     ):
         self.position = position
-        self.display: tuple[int, int] | None = None
 
         self.potential_displays: dict[tuple[int, int], float] = {}
         self.set_display(display)
@@ -46,7 +46,7 @@ class Tile:
         self.potential_displays[tile_coordinates] = chance
         self.potential_displays_chance_sum += chance
 
-    def set_display(self, display: tuple[int, int] | None):
+    def set_display(self, display: tuple[int, int]):
         """Set the tile's display."""
         self.display = display
 

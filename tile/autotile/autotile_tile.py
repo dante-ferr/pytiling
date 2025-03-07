@@ -14,7 +14,7 @@ class AutotileTile(Tile):
         super().__init__(position)
         self.autotile_object = autotile_object
 
-        self.display = None
+        self.display = (0, 0)
 
     def format(self):
         """Format the tile's display"""
@@ -42,7 +42,7 @@ class AutotileTile(Tile):
         def find_display(rule_index: int):
             if rule_index >= len(self.rules):
                 warnings.warn("No display found", UserWarning)
-                return
+                return (0, 0)
             rule = self.layer.autotile_rules[self.autotile_object][rule_index]
 
             for y, row in enumerate(rule.rule_matrix):

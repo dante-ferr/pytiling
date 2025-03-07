@@ -1,7 +1,7 @@
 from PIL import Image
 import numpy as np
 import warnings
-from typing import Any
+from typing import Any, Callable
 
 
 class Tileset:
@@ -19,10 +19,10 @@ class Tileset:
             self.atlas_image.size[1] // tile_height,
         )
 
-        self.tile_images = self._get_tile_images()
+        self._tile_images = self._get_tile_images()
 
-    def _get_tile_images(self):
-        tile_images = np.empty((self.size[1], self.size[0]), dtype=object)
+    def _get_tile_images(self) -> np.ndarray[tuple[int, int], Any]:
+        tile_images = np.empty((self.size[0], self.size[1]), dtype=object)
 
         tile_width, tile_height = self.tile_size
 
@@ -46,9 +46,25 @@ class Tileset:
                 tile_x = x // tile_width
                 tile_y = y // tile_height
 
-                tile_images[tile_y, tile_x] = tile_image
+                tile_images[tile_x, tile_y] = tile_image
 
         return tile_images
 
-    # def get_tile_image(self, tile_position: tuple[int, int]) -> bytes:
-    #     return self.tile_images[tile_position]
+    @property
+    def tile_images(self):
+        """Get the tile images as a numpy array. The format of each image is bytes."""
+        return self._tile_images
+
+    def for_tile_image(self, callback: Callable[[bytes, int, int], None]):
+        """
+        Call a callback function for each tile image in the tileset.
+        The callback function should take three arguments:
+        - byte_data: The byte data of the tile image.
+        - x: The x position of the tile image.
+        - y: The y position of the tile image.
+        """
+        for x in range(self._tile_images.shape[0]):
+            for y in range(self._tile_images.shape[1]):
+                byte_data = self._tile_images[x, y]
+                if byte_data:
+                    callback(byte_data, x, y)

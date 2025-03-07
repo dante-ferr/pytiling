@@ -16,7 +16,7 @@ class LayerRenderer:
     def __init__(self, layer: "TilemapLayer", tileset_image: "TilesetImage"):
         self.layer = layer
         self.tileset_image = tileset_image
-        self.active_tiles: dict[tuple[int, int], "Texture"] = {}
+        self.active_tile_textures: dict[tuple[int, int], "Texture"] = {}
 
         self._initialize_tile_textures()
 
@@ -45,10 +45,10 @@ class LayerRenderer:
         texture = tile_image.get_texture()
         refine_texture()
 
-        self.active_tiles[tile.position] = texture
+        self.active_tile_textures[tile.position] = texture
 
     def render(self):
-        for x, y in self.active_tiles.keys():
-            texture = self.active_tiles[x, y]
+        for x, y in self.active_tile_textures.keys():
+            texture = self.active_tile_textures[x, y]
             tile_x_pos, tile_y_pos = self.layer.tilemap_pos_to_actual_pos((x, y))
             texture.blit(int(tile_x_pos), int(tile_y_pos))

@@ -36,7 +36,7 @@ class PygletTilemapRenderer:
     def _create_layer_renderers(self):
         self.layer_renderers: dict[str, LayerRenderer] = {}
 
-        for layer in self.tilemap.layers.values():
+        for layer in self.tilemap.layers:
             layer_renderer = LayerRenderer(layer, self.tileset_images[layer.tileset])
             self.layer_renderers[layer.name] = layer_renderer
 
@@ -84,6 +84,11 @@ class PygletTilemapRenderer:
                 batch=self.debug_batch,
             )
             self.debug_shapes.add(circle)
+
+    def render_all_layers(self):
+        """Draw all layers of the tilemap according to their order. So the first layer is drawn first, etc."""
+        for layer in self.tilemap.layers:
+            self.render_layer(layer.name)
 
     def render_layer(self, layer_name: str):
         """Draw a layer of the tilemap."""

@@ -30,9 +30,27 @@ class TilemapLayer:
         """Initialize the grid of the tilemap layer."""
         self.grid = np.empty(size, dtype=object)
 
-    def set_size(self, size: tuple[int, int]):
-        """Change the size of the grid."""
-        np.resize(self.grid, size)
+    @property
+    def grid_size(self) -> tuple[int, int]:
+        """Get the size of the grid."""
+        return self.grid.shape
+
+    @grid_size.setter
+    def grid_size(self, size: tuple[int, int]):
+        """Set the size of the grid."""
+        self.grid = np.resize(self.grid, size)
+
+    @property
+    def tile_size(self):
+        return self.tileset.tile_size
+
+    @property
+    def size(self):
+        tile_width, tile_height = self.tile_size
+        return (
+            self.grid.shape[1] * tile_width,
+            self.grid.shape[0] * tile_height,
+        )
 
     def add_create_tile_callback(self, callback: Callable):
         """Add a callback to be called when any tile in the layer is formatted."""
@@ -43,7 +61,7 @@ class TilemapLayer:
         self.format_callbacks.append(callback)
 
     def add_tile(self, tile: Tile, apply_formatting=True):
-        """Add a tile to the grid."""
+        """Add a tile to the layer's grid. Also formats the tile and its potential neighbors."""
         if self.grid is None:
             raise ValueError(
                 "Grid is not initialized. Make sure to add this layer to a tilemap before adding tiles."
@@ -259,15 +277,3 @@ class TilemapLayer:
             pos[1] = int((map_height - position[1]) // tile_height + 1)
 
         return (*pos,)
-
-    @property
-    def tile_size(self):
-        return self.tileset.tile_size
-
-    @property
-    def size(self):
-        tile_width, tile_height = self.tile_size
-        return (
-            self.grid.shape[1] * tile_width,
-            self.grid.shape[0] * tile_height,
-        )
