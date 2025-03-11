@@ -4,7 +4,7 @@ from typing import Any, TYPE_CHECKING
 from ..utils import refine_texture
 
 if TYPE_CHECKING:
-    from tilemap_layer import TilemapLayer
+    from layer.tilemap_layer import TilemapLayer
     from .tileset_image import TilesetImage
     from tile.tile import Tile
     from pyglet.image import Texture
@@ -30,7 +30,9 @@ class LayerRenderer:
 
     def _initialize_tile_textures(self):
         """Create textures for each tile in the layer."""
-        self.layer.add_format_callback(lambda tile: self.create_tile_texture(tile))
+        self.layer.formatter.add_format_callback(
+            lambda tile: self.create_tile_texture(tile)
+        )
 
     def create_tile_texture(self, tile: "Tile"):
         if not tile.position:

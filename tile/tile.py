@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Callable
 import random
 
 if TYPE_CHECKING:
-    from ..tilemap_layer import TilemapLayer
+    from ..layer.tilemap_layer import TilemapLayer
 
 
 class Tile:
@@ -13,7 +13,7 @@ class Tile:
 
     def __init__(
         self,
-        position: tuple[int, int] | None = None,
+        position: tuple[int, int],
         display: tuple[int, int] = (0, 0),
     ):
         self.position = position
@@ -21,11 +21,22 @@ class Tile:
         self.potential_displays: dict[tuple[int, int], float] = {}
         self.set_display(display)
 
-    def set_layer(self, layer: "TilemapLayer"):
-        """Set the tile's layer."""
-        self.layer = layer
+        self._layer: "TilemapLayer | None" = None
 
-    def set_position(self, position: tuple[int, int] | None):
+    @property
+    def layer(self):
+        if self._layer is None:
+            raise ValueError(
+                "Layer is not set. Make sure to append the tile to a layer before using it."
+            )
+        return self._layer
+
+    @layer.setter
+    def layer(self, layer: "TilemapLayer"):
+        """Set the tile's layer."""
+        self._layer = layer
+
+    def set_position(self, position: tuple[int, int]):
         """Set the tile's position."""
         self.position = position
 

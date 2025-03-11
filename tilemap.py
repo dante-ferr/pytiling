@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from .tileset import Tileset
-    from .tilemap_layer import TilemapLayer
+    from .layer.tilemap_layer import TilemapLayer
 
 
 class Tilemap:
@@ -34,6 +34,25 @@ class Tilemap:
         else:
             self.layers.insert(position, layer)
 
+    def add_format_callback_to_all_layers(self, callback):
+        for layer in self.layers:
+            layer.formatter.add_format_callback(callback)
+
+    def add_create_tile_callback_to_all_layers(self, callback):
+        for layer in self.layers:
+            layer.add_create_tile_callback(callback)
+
+    def add_remove_tile_callback_to_all_layers(self, callback):
+        for layer in self.layers:
+            layer.add_remove_tile_callback(callback)
+
+    def add_layer_concurrence(self, *layers: "TilemapLayer"):
+        """Make the specified layers concurrent. Tiles from concurrent layers won't be able to be placed on the same position. So the addition of a tile on a layer will remove the tiles at the same position from its concurrent layers."""
+        for layer in layers:
+            other_layers = [l for l in layers if l is not layer]
+            for other_layer in other_layers:
+                layer.add_concurrent_layer(other_layer)
+
     @property
     def tile_size(self) -> tuple[int, int]:
         """Get the size of a tile in the tilemap."""
@@ -61,6 +80,14 @@ class Tilemap:
         self._grid_size = size
         for layer in self.layers:
             layer.grid_size = size
+
+    def position_is_valid(self, position: tuple[int, int]):
+        return (
+            position[0] >= 0
+            and position[1] >= 0
+            and position[0] < self.grid_size[1]
+            and position[1] < self.grid_size[0]
+        )
 
     def get_layer(self, name: str) -> "TilemapLayer":
         """Get a layer by its name."""

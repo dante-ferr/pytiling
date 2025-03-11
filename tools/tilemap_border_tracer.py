@@ -1,4 +1,4 @@
-from ..tilemap_layer import TilemapLayer
+from ..layer.tilemap_layer import TilemapLayer
 import math
 from typing import Literal, Callable
 from ..tile.tile import Tile
@@ -69,7 +69,7 @@ class TilemapBorderTracer:
 
     def _handle_create_tile(self, tile: Tile):
         """Executed when a tile is added. This function will check if the tile is a border tile and if it is, it will create lines in the tilemap border."""
-        neighbors = self.tilemap_layer.get_neighbors_of(
+        neighbors = self.tilemap_layer.neighbor_processor.get_neighbors_of(
             tile,
             same_autotile_object=True,
             output_type="bool_grid",

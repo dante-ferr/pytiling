@@ -1,7 +1,10 @@
 from ..tile import Tile
 from .autotile_rule import AutotileRule
-
 import warnings
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pytiling import TilemapLayer
 
 
 class AutotileTile(Tile):
@@ -22,7 +25,7 @@ class AutotileTile(Tile):
             return
 
         if (
-            self.layer.get_neighbors_of(
+            self.layer.neighbor_processor.get_neighbors_of(
                 self, radius=2, same_autotile_object=True, output_type="amount"
             )
             == 16
@@ -31,7 +34,9 @@ class AutotileTile(Tile):
         else:
             self.is_deep = False
 
-        neighbors = self.layer.get_neighbors_of(self, same_autotile_object=True)
+        neighbors = self.layer.neighbor_processor.get_neighbors_of(
+            self, same_autotile_object=True
+        )
         self._rule_format(neighbors)
 
         super().format()
