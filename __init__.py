@@ -6,6 +6,7 @@ from .tilemap import Tilemap
 from .tileset import Tileset
 from .tools.tilemap_border_tracer import TilemapBorderTracer
 from .physics.pymunk_tilemap_physics import PymunkTilemapPhysics
+from .grid_map import GridMap
 
 __all__ = [
     "AutotileRule",
@@ -16,4 +17,5 @@ __all__ = [
     "Tileset",
     "TilemapBorderTracer",
     "PymunkTilemapPhysics",
+    "GridMap",
 ]

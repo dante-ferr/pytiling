@@ -26,8 +26,8 @@ class PymunkTilemapPhysics:
         for line in self.border_tracer.lines:
             x1, y1 = line.start
             x2, y2 = line.end
-            start = layer.tilemap_pos_to_actual_pos((x1, y1 - 1))
-            end = layer.tilemap_pos_to_actual_pos((x2, y2 - 1))
+            start = layer.grid_pos_to_actual_pos((x1, y1 - 1))
+            end = layer.grid_pos_to_actual_pos((x2, y2 - 1))
 
             physics_line = pymunk.Segment(self.body, start, end, radius=2)
             physics_line.collision_type = 2

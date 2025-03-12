@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Callable, Literal
 
 if TYPE_CHECKING:
-    from .tilemap_layer import TilemapLayer, Area
-    from ..tile import Tile
+    from . import TilemapLayer, Area
+    from ...tile import Tile
 
 
-class LayerFormatter:
+class TilemapLayerFormatter:
     def __init__(self, layer: "TilemapLayer"):
         self.layer = layer
 

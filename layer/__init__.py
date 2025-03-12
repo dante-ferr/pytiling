@@ -1,4 +1,3 @@
-from .tilemap_layer import TilemapLayer
-from .layer_neighbor_processor import LayerNeighborProcessor
+from .grid_layer import GridLayer
 
-__all__ = ["TilemapLayer", "LayerNeighborProcessor"]
+__all___ = ["GridLayer"]

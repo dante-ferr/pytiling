@@ -3,9 +3,11 @@ import warnings
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...layer.layer_neighbor_processor import LayerNeighborProcessor
+    from ...layer.tilemap_layer.tilemap_layer_neighbor_processor import (
+        TilemapLayerNeighborProcessor,
+    )
     from .autotile_rule import AutotileRule
-    from layer import TilemapLayer
+    from layer.tilemap_layer import TilemapLayer
 
 
 class AutotileTile(Tile):
@@ -18,15 +20,17 @@ class AutotileTile(Tile):
         super().__init__(position)
         self.autotile_object = autotile_object
 
-        self.layer_neighbor_processor: "LayerNeighborProcessor | None" = None
+        self.layer_neighbor_processor: "TilemapLayerNeighborProcessor | None" = None
         self.layer_set_callbacks.append(self._on_layer_set)
 
         self.display = (0, 0)
 
     def _on_layer_set(self, layer: "TilemapLayer"):
-        from ...layer.layer_neighbor_processor import LayerNeighborProcessor
+        from ...layer.tilemap_layer.tilemap_layer_neighbor_processor import (
+            TilemapLayerNeighborProcessor,
+        )
 
-        self.layer_neighbor_processor = LayerNeighborProcessor(layer)
+        self.layer_neighbor_processor = TilemapLayerNeighborProcessor(layer)
 
     def format(self):
         """Format the tile's display"""

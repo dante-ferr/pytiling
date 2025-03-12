@@ -49,8 +49,8 @@ class PygletTilemapRenderer:
             x1, y1 = line.start
             x2, y2 = line.end
 
-            x1, y1 = layer.tilemap_pos_to_actual_pos((x1, y1 - 1))
-            x2, y2 = layer.tilemap_pos_to_actual_pos((x2, y2 - 1))
+            x1, y1 = layer.grid_pos_to_actual_pos((x1, y1 - 1))
+            x2, y2 = layer.grid_pos_to_actual_pos((x2, y2 - 1))
 
             if line.orientation == "vertical":
                 color = (255, 0, 0)

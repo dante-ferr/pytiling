@@ -3,12 +3,12 @@ import numpy as np
 
 
 if TYPE_CHECKING:
-    from .tilemap_layer import TilemapLayer
-    from ..tile import Tile
-    from ..tile.autotile import AutotileTile
+    from . import TilemapLayer
+    from ...tile import Tile
+    from ...tile.autotile import AutotileTile
 
 
-class LayerNeighborProcessor:
+class TilemapLayerNeighborProcessor:
     """Processes tile neighbors in a tilemap layer, considering out-of-grid spaces as neighbors."""
 
     def __init__(

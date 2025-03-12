@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Callable
 from pyglet.window import mouse
 
 if TYPE_CHECKING:
-    from layer_renderer import LayerRenderer
+    from .layer_renderer import LayerRenderer
     from tile.tile import Tile
 
 
@@ -14,7 +14,7 @@ def create_tile_on_click(
 
     def on_mouse_press(x, y, button, modifiers):
         if button == mouse.LEFT:
-            grid_x, grid_y = layer_renderer.layer.actual_pos_to_tilemap_pos((x, y))
+            grid_x, grid_y = layer_renderer.layer.actual_pos_to_grid_pos((x, y))
             tile = create_tile_callback(grid_x, grid_y)
             # tile.set_position((grid_x, grid_y))
             layer_renderer.layer.add_tile(tile)

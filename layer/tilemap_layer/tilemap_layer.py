@@ -1,14 +1,15 @@
 from typing import TypedDict, Callable, cast, TYPE_CHECKING
 import numpy as np
-from ..tileset import Tileset
-from ..tile.autotile.default_autotile_rules import default_rules
-from ..tile.autotile.autotile_tile import AutotileTile
-from .layer_formatter import LayerFormatter
-from .layer_checker import LayerChecker
+from ...tileset import Tileset
+from ...tile.autotile.default_autotile_rules import default_rules
+from ...tile.autotile.autotile_tile import AutotileTile
+from .tilemap_layer_formatter import TilemapLayerFormatter
+from ..layer_checker import LayerChecker
+from ..grid_layer import GridLayer
 
 if TYPE_CHECKING:
-    from ..tile import Tile
-    from ..tile.autotile import AutotileRule
+    from ...tile import Tile
+    from ...tile.autotile import AutotileRule
 
 
 class Area(TypedDict):
@@ -16,13 +17,15 @@ class Area(TypedDict):
     bottom_right: tuple[int, int]
 
 
-class TilemapLayer:
+class TilemapLayer(GridLayer):
     """A class representing a tilemap layer. It contains a grid of tiles."""
 
     autotile_rules: dict[str, list["AutotileRule"]]
 
     def __init__(self, name: str, tileset: Tileset):
+        super().__init__(name, tileset.tile_size)
         self.name = name
+        self.tile_size: tuple[int, int] = tileset.tile_size
         self.tileset = tileset
         self.autotile_rules = {}
 
@@ -33,47 +36,7 @@ class TilemapLayer:
 
         self.concurrent_layers: list[TilemapLayer] = []
 
-        self.formatter = LayerFormatter(self)
-        self.checker = LayerChecker(self)
-
-    def initialize_grid(self, size: tuple[int, int]):
-        """Initialize the grid of the tilemap layer."""
-        self.grid = np.empty(size, dtype=object)
-
-    @property
-    def grid(self) -> np.ndarray:
-        """Get the grid of the tilemap layer."""
-        self.checker.check_grid()
-        assert self._grid is not None
-        return self._grid
-
-    @grid.setter
-    def grid(self, grid: np.ndarray):
-        """Set the grid of the tilemap layer."""
-        self._grid = grid
-
-    @property
-    def grid_size(self) -> tuple[int, int]:
-        """Get the size of the grid."""
-        self.checker.check_grid()
-        return self.grid.shape
-
-    @grid_size.setter
-    def grid_size(self, size: tuple[int, int]):
-        """Set the size of the grid."""
-        self.grid = np.resize(self.grid, size)
-
-    @property
-    def tile_size(self):
-        return self.tileset.tile_size
-
-    @property
-    def size(self):
-        tile_width, tile_height = self.tile_size
-        return (
-            self.grid.shape[1] * tile_width,
-            self.grid.shape[0] * tile_height,
-        )
+        self.formatter = TilemapLayerFormatter(self)
 
     def add_concurrent_layer(self, layer: "TilemapLayer"):
         """Add a layer to the list of concurrent layers. Tiles from concurrent layers won't be able to be placed on the same position. So the addition of a tile on a layer will remove the tiles at the same position from its concurrent layers."""
@@ -226,36 +189,3 @@ class TilemapLayer:
         for x in range(top_left_x, bottom_right_x + 1):
             for y in range(top_left_y, bottom_right_y + 1):
                 callback(x, y)
-
-    def tilemap_pos_to_actual_pos(
-        self, position: tuple[int, int], invert_x_axis=False, invert_y_axis=True
-    ) -> tuple[float, float]:
-        """Convert a tile position in the tilemap layer to an actual position in the window."""
-        tile_width, tile_height = self.tile_size
-        map_width, map_height = self.size
-        pos = [position[0] * tile_width, position[1] * tile_height]
-
-        if invert_x_axis:
-            pos[0] = map_width - pos[0]
-        if invert_y_axis:
-            pos[1] = map_height - pos[1]
-
-        return (pos[0], pos[1])
-
-    def actual_pos_to_tilemap_pos(
-        self, position: tuple[float, float], invert_x_axis=False, invert_y_axis=True
-    ):
-        """Convert an actual position in the window to a tile position in the tilemap layer."""
-        tile_width, tile_height = self.tile_size
-        map_width, map_height = self.size
-        pos: list[int] = [
-            int(position[0] // tile_width),
-            int(position[1] // tile_height + 1),
-        ]
-
-        if invert_x_axis:
-            pos[0] = int((map_width - position[0]) // tile_width)
-        if invert_y_axis:
-            pos[1] = int((map_height - position[1]) // tile_height + 1)
-
-        return (*pos,)

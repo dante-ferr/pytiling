@@ -4,7 +4,7 @@ from typing import Any, TYPE_CHECKING
 from ..utils import refine_texture
 
 if TYPE_CHECKING:
-    from layer.tilemap_layer import TilemapLayer
+    from layer.tilemap_layer.tilemap_layer import TilemapLayer
     from .tileset_image import TilesetImage
     from tile.tile import Tile
     from pyglet.image import Texture
@@ -52,5 +52,5 @@ class LayerRenderer:
     def render(self):
         for x, y in self.active_tile_textures.keys():
             texture = self.active_tile_textures[x, y]
-            tile_x_pos, tile_y_pos = self.layer.tilemap_pos_to_actual_pos((x, y))
+            tile_x_pos, tile_y_pos = self.layer.grid_pos_to_actual_pos((x, y))
             texture.blit(int(tile_x_pos), int(tile_y_pos))

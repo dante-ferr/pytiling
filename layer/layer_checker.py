@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .tilemap_layer import TilemapLayer
+    from .grid_layer import GridLayer
 
 
 class LayerChecker:
     """A class for checking the validity of the properties of a tilemap layer."""
 
-    def __init__(self, layer: "TilemapLayer"):
+    def __init__(self, layer: "GridLayer"):
         self.layer = layer
 
     def check_grid(self):
