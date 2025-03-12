@@ -48,9 +48,15 @@ class GridMap:
             and position[1] < self.grid_size[0]
         )
 
-    def get_layer(self, name: str) -> "GridLayer":
+    def get_layer(self, name: str) -> "GridLayer | None":
         """Get a layer by its name."""
-        return self._layers_dict[name]
+        if name in self._layers_dict:
+            return self._layers_dict[name]
+
+    @property
+    def layers(self) -> list["GridLayer"]:
+        """Get all layers."""
+        return self._layers
 
     @property
     def size(self):

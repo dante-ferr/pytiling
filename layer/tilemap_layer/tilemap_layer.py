@@ -12,11 +12,6 @@ if TYPE_CHECKING:
     from ...tile.autotile import AutotileRule
 
 
-class Area(TypedDict):
-    top_left: tuple[int, int]
-    bottom_right: tuple[int, int]
-
-
 class TilemapLayer(GridLayer):
     """A class representing a tilemap layer. It contains a grid of tiles."""
 
@@ -108,13 +103,6 @@ class TilemapLayer(GridLayer):
         for callback in self.remove_tile_callbacks:
             callback(tile)
 
-    def for_grid_position(self, callback: Callable):
-        """Loops over each grid position in the layer's grid, calling the given callback."""
-        self.checker.check_grid()
-        for y in range(self.grid.shape[0]):
-            for x in range(self.grid.shape[1]):
-                callback(x, y)
-
     def for_all_tiles(self, callback: Callable):
         """Loops over each tile in the layer's grid, calling the given callback."""
         self.checker.check_grid()
@@ -165,27 +153,3 @@ class TilemapLayer(GridLayer):
                 edge_tiles.add(tile)
 
         return list(edge_tiles)
-
-    def get_area_around(self, center: tuple[int, int], radius: int) -> Area:
-        """Get an area around a center point with a given radius."""
-        center_x, center_y = center
-        grid_height, grid_width = self.grid.shape
-
-        top_left_x = max(center_x - radius, 0)
-        top_left_y = max(center_y - radius, 0)
-        bottom_right_x = min(center_x + radius, grid_width - 1)
-        bottom_right_y = min(center_y + radius, grid_height - 1)
-
-        return Area(
-            top_left=(top_left_x, top_left_y),
-            bottom_right=(bottom_right_x, bottom_right_y),
-        )
-
-    def loop_over_area(self, area: "Area", callback):
-        """Loop over an area of the grid and call a callback function for each tile in the area."""
-        top_left_x, top_left_y = area["top_left"]
-        bottom_right_x, bottom_right_y = area["bottom_right"]
-
-        for x in range(top_left_x, bottom_right_x + 1):
-            for y in range(top_left_y, bottom_right_y + 1):
-                callback(x, y)

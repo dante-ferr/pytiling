@@ -13,7 +13,7 @@ class Tilemap(GridMap):
     The layers are ordered by default, but it's not mandatory to use them in order.
     """
 
-    def __init__(self, grid_size: tuple[int, int] = (8, 8)):
+    def __init__(self, grid_size: tuple[int, int]):
         super().__init__(grid_size)
 
         self.tilesets: set["Tileset"] = set()

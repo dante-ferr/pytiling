@@ -1,3 +1,3 @@
-from .grid_layer import GridLayer
+from .grid_layer import GridLayer, Area
 
-__all___ = ["GridLayer"]
+__all__ = ["GridLayer", "Area"]
