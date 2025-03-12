@@ -21,7 +21,17 @@ class Tile:
         self.potential_displays: dict[tuple[int, int], float] = {}
         self.set_display(display)
 
+        self.layer_set_callbacks: list[Callable] = []
+
+        self.locked = False
+
         self._layer: "TilemapLayer | None" = None
+
+    def remove(self):
+        """Remove the tile from its layer."""
+        if self.layer is None:
+            raise ValueError("Tile is not in a layer to be removed.")
+        self.layer.remove_tile(self)
 
     @property
     def layer(self):
@@ -35,6 +45,8 @@ class Tile:
     def layer(self, layer: "TilemapLayer"):
         """Set the tile's layer."""
         self._layer = layer
+        for callback in self.layer_set_callbacks:
+            callback(layer)
 
     def set_position(self, position: tuple[int, int]):
         """Set the tile's position."""

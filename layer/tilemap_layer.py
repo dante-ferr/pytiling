@@ -1,12 +1,14 @@
-from typing import TypedDict, Literal, Callable, cast
-from ..tile.tile import Tile
+from typing import TypedDict, Callable, cast, TYPE_CHECKING
 import numpy as np
 from ..tileset import Tileset
-from ..tile.autotile.autotile_rule import AutotileRule
 from ..tile.autotile.default_autotile_rules import default_rules
 from ..tile.autotile.autotile_tile import AutotileTile
-from .layer_neighbor_processor import LayerNeighborProcessor
 from .layer_formatter import LayerFormatter
+from .layer_checker import LayerChecker
+
+if TYPE_CHECKING:
+    from ..tile import Tile
+    from ..tile.autotile import AutotileRule
 
 
 class Area(TypedDict):
@@ -17,28 +19,43 @@ class Area(TypedDict):
 class TilemapLayer:
     """A class representing a tilemap layer. It contains a grid of tiles."""
 
-    autotile_rules: dict[str, list[AutotileRule]]
+    autotile_rules: dict[str, list["AutotileRule"]]
 
     def __init__(self, name: str, tileset: Tileset):
         self.name = name
         self.tileset = tileset
         self.autotile_rules = {}
 
+        self._grid: np.ndarray | None = None
+
         self.create_tile_callbacks: list[Callable] = []
         self.remove_tile_callbacks: list[Callable] = []
 
         self.concurrent_layers: list[TilemapLayer] = []
 
-        self.neighbor_processor = LayerNeighborProcessor(self)
         self.formatter = LayerFormatter(self)
+        self.checker = LayerChecker(self)
 
     def initialize_grid(self, size: tuple[int, int]):
         """Initialize the grid of the tilemap layer."""
         self.grid = np.empty(size, dtype=object)
 
     @property
+    def grid(self) -> np.ndarray:
+        """Get the grid of the tilemap layer."""
+        self.checker.check_grid()
+        assert self._grid is not None
+        return self._grid
+
+    @grid.setter
+    def grid(self, grid: np.ndarray):
+        """Set the grid of the tilemap layer."""
+        self._grid = grid
+
+    @property
     def grid_size(self) -> tuple[int, int]:
         """Get the size of the grid."""
+        self.checker.check_grid()
         return self.grid.shape
 
     @grid_size.setter
@@ -72,8 +89,15 @@ class TilemapLayer:
 
     def add_tile(self, tile: "Tile", apply_formatting=True):
         """Add a tile to the layer's grid. Also formats the tile and its potential neighbors."""
-        self._check_grid()
-        self._check_position_is_valid(tile.position)
+        self.checker.check_grid()
+        self.checker.check_position(tile.position)
+
+        concurrent_tiles = self._concurrent_tiles_at(tile.position)
+        for concurrent_tile in concurrent_tiles:
+            # If the tile is locked, it can't be removed. Also, this function cannot add the tile, as it conflicts with the concurrent tile.
+            if concurrent_tile.locked:
+                return
+            concurrent_tile.remove()
 
         if self.get_tile_at(tile.position) is not None:
             self.remove_tile(tile, apply_formatting=False)
@@ -87,38 +111,57 @@ class TilemapLayer:
         if apply_formatting:
             self.formatter.format_tile(tile)
 
-        # Remove concurrent tiles
-        for concurrent_layer in self.concurrent_layers:
-            concurrent_tile = concurrent_layer.get_tile_at(tile.position)
-            if concurrent_tile is not None:
-                concurrent_layer.remove_tile(concurrent_tile)
-
         for callback in self.create_tile_callbacks:
             callback(tile)
 
+    def _concurrent_tiles_at(self, position: tuple[int, int]):
+        concurrent_tiles: list["Tile"] = []
+
+        for concurrent_layer in self.concurrent_layers:
+            tile = concurrent_layer.get_tile_at(position)
+            if tile:
+                concurrent_tiles.append(tile)
+        return concurrent_tiles
+
     def _handle_add_autotile_tile(self, tile: "AutotileTile", apply_formatting: bool):
         """Handle adding an autotile tile to the layer."""
-        if tile.autotile_object is None:
-            raise ValueError("Autotile object must be set for autotile tiles.")
-
         if tile.autotile_object not in self.autotile_rules:
             self.autotile_rules[tile.autotile_object] = default_rules
         tile.rules = self.autotile_rules[tile.autotile_object]
 
         if apply_formatting:
-            self.formatter.format_area(self._get_area_around(tile.position, 2))
+            self.formatter.format_area(self.get_area_around(tile.position, 2))
 
     def remove_tile(self, tile: "Tile", apply_formatting=True):
         """Remove a tile from the layer's grid."""
-        self._check_grid()
-        self._check_position_is_valid(tile.position)
+        self.checker.check_grid()
+        if tile.locked:
+            return
 
         self.grid[tile.position[1], tile.position[0]] = None
         if apply_formatting:
-            self.formatter.format_area(self._get_area_around(tile.position, 1))
+            self.formatter.format_area(self.get_area_around(tile.position, 1))
 
         for callback in self.remove_tile_callbacks:
             callback(tile)
+
+    def for_grid_position(self, callback: Callable):
+        """Loops over each grid position in the layer's grid, calling the given callback."""
+        self.checker.check_grid()
+        for y in range(self.grid.shape[0]):
+            for x in range(self.grid.shape[1]):
+                callback(x, y)
+
+    def for_all_tiles(self, callback: Callable):
+        """Loops over each tile in the layer's grid, calling the given callback."""
+        self.checker.check_grid()
+
+        def position_callback(x, y):
+            tile = self.get_tile_at((x, y))
+            if tile is not None:
+                callback(self.get_tile_at((x, y)))
+
+        self.for_grid_position(position_callback)
 
     def add_autotile_rule(self, autotile_object, *rules):
         """Append one or more rules to the list of rules for a specific autotile object."""
@@ -131,11 +174,36 @@ class TilemapLayer:
 
     def get_tile_at(self, position: tuple[int, int]):
         """Get a tile at a given position."""
-        if self._position_is_valid(position):
-            return cast(Tile, self.grid[position[1], position[0]])
+        if self.checker.position_is_valid(position):
+            return cast("Tile", self.grid[position[1], position[0]])
         return None
 
-    def _get_area_around(self, center: tuple[int, int], radius: int) -> Area:
+    def get_edge_tiles(self):
+        """Get a list of tiles that are on the edges of the layer's grid, ensuring no duplicates at corners."""
+        self.checker.check_grid()
+
+        height, width = self.grid.shape
+        edge_tiles = set()
+
+        for y in range(height):
+            tile = self.get_tile_at((0, y))
+            if tile is not None:
+                edge_tiles.add(tile)
+            tile = self.get_tile_at((width - 1, y))
+            if tile is not None:
+                edge_tiles.add(tile)
+
+        for x in range(1, width - 1):
+            tile = self.get_tile_at((x, 0))
+            if tile is not None:
+                edge_tiles.add(tile)
+            tile = self.get_tile_at((x, height - 1))
+            if tile is not None:
+                edge_tiles.add(tile)
+
+        return list(edge_tiles)
+
+    def get_area_around(self, center: tuple[int, int], radius: int) -> Area:
         """Get an area around a center point with a given radius."""
         center_x, center_y = center
         grid_height, grid_width = self.grid.shape
@@ -148,31 +216,6 @@ class TilemapLayer:
         return Area(
             top_left=(top_left_x, top_left_y),
             bottom_right=(bottom_right_x, bottom_right_y),
-        )
-
-    def _check_grid(self):
-        if self.grid is None:
-            raise ValueError(
-                "Grid is not initialized. Make sure to add this layer to a tilemap before adding tiles."
-            )
-
-    def _check_position_is_valid(self, position: tuple[int, int] | None):
-        if position is None:
-            raise ValueError(
-                "Tile position cannot be None. Ensure to set the position of the tile before adding it to the layer."
-            )
-
-        if not self._position_is_valid(position):
-            raise ValueError(
-                f"Position {position} is not valid, because it is out of bounds for the grid ({self.grid.shape})."
-            )
-
-    def _position_is_valid(self, position: tuple[int, int]):
-        return (
-            position[0] >= 0
-            and position[1] >= 0
-            and position[0] < self.grid.shape[1]
-            and position[1] < self.grid.shape[0]
         )
 
     def loop_over_area(self, area: "Area", callback):

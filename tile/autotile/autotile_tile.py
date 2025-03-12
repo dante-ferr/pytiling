@@ -1,42 +1,47 @@
 from ..tile import Tile
-from .autotile_rule import AutotileRule
 import warnings
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pytiling import TilemapLayer
+    from ...layer.layer_neighbor_processor import LayerNeighborProcessor
+    from .autotile_rule import AutotileRule
+    from layer import TilemapLayer
 
 
 class AutotileTile(Tile):
     """A class representing an autotile tile. It extends the Tile class and adds the ability to change its display based on the rules it has. Each rule defines a specific display based on the tile's neighbors."""
 
-    rules: list[AutotileRule]
+    rules: list["AutotileRule"]
     is_deep = False
 
     def __init__(self, position: tuple[int, int], autotile_object: str):
         super().__init__(position)
         self.autotile_object = autotile_object
 
+        self.layer_neighbor_processor: "LayerNeighborProcessor | None" = None
+        self.layer_set_callbacks.append(self._on_layer_set)
+
         self.display = (0, 0)
+
+    def _on_layer_set(self, layer: "TilemapLayer"):
+        from ...layer.layer_neighbor_processor import LayerNeighborProcessor
+
+        self.layer_neighbor_processor = LayerNeighborProcessor(layer)
 
     def format(self):
         """Format the tile's display"""
-        if self.layer is None:
+        if self.layer_neighbor_processor is None:
             return
 
         if (
-            self.layer.neighbor_processor.get_neighbors_of(
-                self, radius=2, same_autotile_object=True, output_type="amount"
-            )
+            self.layer_neighbor_processor.get_amount_of_neighbors_of(self, radius=2)
             == 16
         ):
             self.is_deep = True
         else:
             self.is_deep = False
 
-        neighbors = self.layer.neighbor_processor.get_neighbors_of(
-            self, same_autotile_object=True
-        )
+        neighbors = self.layer_neighbor_processor.get_neighbors_of(self)
         self._rule_format(neighbors)
 
         super().format()

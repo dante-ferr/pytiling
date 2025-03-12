@@ -47,3 +47,7 @@ class LayerFormatter:
         tile.format()
         for callback in self.format_callbacks:
             callback(tile)
+
+    def format_all_tiles(self):
+        """Format all tiles in the layer."""
+        self.layer.for_all_tiles(self.format_tile)

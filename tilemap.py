@@ -46,7 +46,8 @@ class Tilemap:
         for layer in self.layers:
             layer.add_remove_tile_callback(callback)
 
-    def add_layer_concurrence(self, *layers: "TilemapLayer"):
+    @staticmethod
+    def add_layer_concurrence(*layers: "TilemapLayer"):
         """Make the specified layers concurrent. Tiles from concurrent layers won't be able to be placed on the same position. So the addition of a tile on a layer will remove the tiles at the same position from its concurrent layers."""
         for layer in layers:
             other_layers = [l for l in layers if l is not layer]
