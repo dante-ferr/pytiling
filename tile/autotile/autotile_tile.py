@@ -30,7 +30,7 @@ class AutotileTile(Tile):
             TilemapLayerNeighborProcessor,
         )
 
-        self.layer_neighbor_processor = TilemapLayerNeighborProcessor(layer)
+        self.layer_neighbor_processor = layer.autotile_neighbor_processor
 
     def format(self):
         """Format the tile's display"""
@@ -45,12 +45,14 @@ class AutotileTile(Tile):
         else:
             self.is_deep = False
 
-        neighbors = self.layer_neighbor_processor.get_neighbors_of(self)
-        self._rule_format(neighbors)
+        neighbors_bool_grid = self.layer_neighbor_processor.get_neighbors_bool_grid(
+            self
+        )
+        self._rule_format(neighbors_bool_grid)
 
         super().format()
 
-    def _rule_format(self, filtered_neighbors):
+    def _rule_format(self, neighbors_bool_grid):
         """Change the tile's display based on the rules it has."""
 
         def find_display(rule_index: int):
@@ -66,9 +68,9 @@ class AutotileTile(Tile):
                     if cell == 2:
                         continue
 
-                    neighbor_cell = filtered_neighbors[y, x]
-                    if (neighbor_cell and cell == 0) or (
-                        (not neighbor_cell) and cell == 3
+                    neighbor_exists = neighbors_bool_grid[y, x]
+                    if (neighbor_exists and cell == 0) or (
+                        (not neighbor_exists) and cell == 3
                     ):
                         return find_display(rule_index + 1)
 

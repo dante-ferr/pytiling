@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING, Callable, Literal
 
 if TYPE_CHECKING:
-    from . import TilemapLayer, Area
+    from . import TilemapLayer
+    from ..grid_layer import Area
     from ...tile import Tile
 
 

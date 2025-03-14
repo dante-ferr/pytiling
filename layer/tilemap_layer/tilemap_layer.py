@@ -6,6 +6,7 @@ from ...tile.autotile.autotile_tile import AutotileTile
 from .tilemap_layer_formatter import TilemapLayerFormatter
 from ..layer_checker import LayerChecker
 from ..grid_layer import GridLayer
+from .tilemap_layer_neighbor_processor import TilemapLayerNeighborProcessor
 
 if TYPE_CHECKING:
     from ...tile import Tile
@@ -23,6 +24,7 @@ class TilemapLayer(GridLayer):
         self.tile_size: tuple[int, int] = tileset.tile_size
         self.tileset = tileset
         self.autotile_rules = {}
+        self.autotile_neighbor_processor = TilemapLayerNeighborProcessor(self)
 
         self._grid: np.ndarray | None = None
 
@@ -50,14 +52,17 @@ class TilemapLayer(GridLayer):
         self.checker.check_grid()
         self.checker.check_position(tile.position)
 
-        concurrent_tiles = self._concurrent_tiles_at(tile.position)
-        for concurrent_tile in concurrent_tiles:
+        concurrent_tiles_in_place = self._concurrent_tiles_at(tile.position)
+        for concurrent_tile in concurrent_tiles_in_place:
             # If the tile is locked, it can't be removed. Also, this function cannot add the tile, as it conflicts with the concurrent tile.
             if concurrent_tile.locked:
                 return
             concurrent_tile.remove()
 
-        if self.get_tile_at(tile.position) is not None:
+        same_layer_tile_in_place = self.get_tile_at(tile.position)
+        if same_layer_tile_in_place is not None:
+            if same_layer_tile_in_place.locked:
+                return
             self.remove_tile(tile, apply_formatting=False)
 
         tile.layer = self
@@ -88,14 +93,24 @@ class TilemapLayer(GridLayer):
         tile.rules = self.autotile_rules[tile.autotile_object]
 
         if apply_formatting:
-            self.formatter.format_area(self.get_area_around(tile.position, 2))
+            self._format_autotile_tile_neighbors(tile)
+
+    def _format_autotile_tile_neighbors(self, tile: "AutotileTile"):
+        tile_neighbors = self.autotile_neighbor_processor.get_neighbors_of(
+            tile, radius=2
+        )
+        for row in tile_neighbors:
+            for neighbor in row:
+                if not isinstance(neighbor, AutotileTile):
+                    continue
+                self.formatter.format_tile(neighbor)
 
     def remove_tile(self, tile: "Tile", apply_formatting=True):
         """Remove a tile from the layer's grid."""
-        self.checker.check_grid()
         if tile.locked:
             return
 
+        self.checker.check_grid()
         self.grid[tile.position[1], tile.position[0]] = None
         if apply_formatting:
             self.formatter.format_area(self.get_area_around(tile.position, 1))

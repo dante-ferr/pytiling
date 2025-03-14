@@ -3,6 +3,7 @@ import math
 from typing import Literal, Callable
 from ..tile.tile import Tile
 from typing import TypedDict
+from ..layer.tilemap_layer import TilemapLayerNeighborProcessor
 
 
 def order_pos(positions: tuple[tuple[int, int], tuple[int, int]]):
@@ -61,6 +62,10 @@ class TilemapBorderTracer:
         self.lines: set[Line] = set()
         self.create_tile_callback: list[Callable] = []
 
+        self.neighbor_processor = TilemapLayerNeighborProcessor(
+            tilemap_layer, same_autotile_object=True, adjancecy_rule="four"
+        )
+
         tilemap_layer.add_create_tile_callback(self._handle_create_tile)
 
     def add_create_tile_callback(self, callback: Callable):
@@ -69,12 +74,7 @@ class TilemapBorderTracer:
 
     def _handle_create_tile(self, tile: Tile):
         """Executed when a tile is added. This function will check if the tile is a border tile and if it is, it will create lines in the tilemap border."""
-        neighbors = self.tilemap_layer.neighbor_processor.get_neighbors_of(
-            tile,
-            same_autotile_object=True,
-            output_type="bool_grid",
-            adjacency_rule="four_neighbors",
-        )
+        neighbors = self.neighbor_processor.get_neighbors_bool_grid(tile)
         if tile.position is None:
             return
 

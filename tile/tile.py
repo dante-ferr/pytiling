@@ -27,11 +27,11 @@ class Tile:
 
         self._layer: "TilemapLayer | None" = None
 
-    def remove(self):
+    def remove(self, apply_formatting=True):
         """Remove the tile from its layer."""
         if self.layer is None:
             raise ValueError("Tile is not in a layer to be removed.")
-        self.layer.remove_tile(self)
+        self.layer.remove_tile(self, apply_formatting)
 
     @property
     def layer(self):
