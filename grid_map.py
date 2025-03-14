@@ -1,12 +1,12 @@
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Sequence
 
 if TYPE_CHECKING:
     from layer import GridLayer
 
 
 class GridMap:
-    def __init__(self, grid_size: tuple[int, int]):
-        self._tile_size: tuple[int, int] | None = None
+    def __init__(self, grid_size: tuple[int, int], tile_size: tuple[int, int]):
+        self.tile_size = tile_size
         self._grid_size = grid_size
 
         self._layers_dict: dict[str, "GridLayer"] = {}
@@ -20,13 +20,6 @@ class GridMap:
             self._layers.append(layer)
         else:
             self._layers.insert(position, layer)
-
-    @property
-    def tile_size(self) -> tuple[int, int]:
-        """Get the size of a tile in the tilemap."""
-        if not self._tile_size:
-            raise ValueError("Tile size not set for the tilemap.")
-        return self._tile_size
 
     @property
     def grid_size(self) -> tuple[int, int]:
@@ -54,7 +47,7 @@ class GridMap:
             return self._layers_dict[name]
 
     @property
-    def layers(self) -> list["GridLayer"]:
+    def layers(self) -> Sequence["GridLayer"]:
         """Get all layers."""
         return self._layers
 

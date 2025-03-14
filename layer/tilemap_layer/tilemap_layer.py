@@ -19,9 +19,8 @@ class TilemapLayer(GridLayer):
     autotile_rules: dict[str, list["AutotileRule"]]
 
     def __init__(self, name: str, tileset: Tileset):
-        super().__init__(name, tileset.tile_size)
+        super().__init__(name)
         self.name = name
-        self.tile_size: tuple[int, int] = tileset.tile_size
         self.tileset = tileset
         self.autotile_rules = {}
         self.autotile_neighbor_processor = TilemapLayerNeighborProcessor(self)

@@ -9,15 +9,30 @@ class Area(TypedDict):
 
 
 class GridLayer:
-    def __init__(self, name: str, tile_size: tuple[int, int]):
+    def __init__(self, name: str):
         self.name = name
-        self.tile_size = tile_size
+        self._tile_size: tuple[int, int] | None = None
 
         self.checker = LayerChecker(self)
 
     def initialize_grid(self, size: tuple[int, int]):
         """Initialize the grid of the tilemap layer."""
         self.grid = np.empty(size, dtype=object)
+
+    @property
+    def tile_size(self) -> tuple[int, int]:
+        """Get the tile size of the layer."""
+        if not self._tile_size:
+            raise ValueError(
+                "Tile size not set for the layer. Ensure it has been added to a tilemap."
+            )
+
+        return self._tile_size
+
+    @tile_size.setter
+    def tile_size(self, tile_size: tuple[int, int]):
+        """Set the tile size of the layer."""
+        self._tile_size = tile_size
 
     @property
     def size(self):

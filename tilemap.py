@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast, Sequence
 from .grid_map import GridMap
 
 if TYPE_CHECKING:
@@ -13,28 +13,26 @@ class Tilemap(GridMap):
     The layers are ordered by default, but it's not mandatory to use them in order.
     """
 
-    def __init__(self, grid_size: tuple[int, int]):
-        super().__init__(grid_size)
+    def __init__(self, grid_size: tuple[int, int], tile_size: tuple[int, int]):
+        super().__init__(grid_size, tile_size)
 
         self.tilesets: set["Tileset"] = set()
 
     def add_layer(self, layer: "GridLayer", position: int | Literal["end"] = "end"):
         """Add a layer to the tilemap. By default, it will be added to the end of the list, so it's a good practice to add layers in order."""
         layer = cast("TilemapLayer", layer)
-
-        if self._tile_size is not None and layer.tile_size != self._tile_size:
-            raise ValueError(
-                "Two tilesets with different tile sizes cannot be used on the same tilemap."
-            )
-        self._tile_size = layer.tile_size
-        self.tilesets.add(layer.tileset)
+        layer.tile_size = self.tile_size
+        self._add_tileset(layer.tileset)
 
         super().add_layer(layer, position)
 
     @property
-    def layers(self) -> list["TilemapLayer"]:
-        """Get the layers of the tilemap."""
-        return cast(list["TilemapLayer"], self._layers)
+    def layers(self) -> Sequence["TilemapLayer"]:
+        return cast(Sequence["TilemapLayer"], super().layers)
+
+    def _add_tileset(self, tileset: "Tileset"):
+        tileset.tile_size = self.tile_size
+        self.tilesets.add(tileset)
 
     def add_format_callback_to_all_layers(self, callback):
         for layer in self.layers:
