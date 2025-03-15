@@ -2,9 +2,10 @@ from typing import TYPE_CHECKING, Literal, cast, Sequence
 from .grid_map import GridMap
 
 if TYPE_CHECKING:
-    from .tileset import Tileset
+    from .tileset.tileset import Tileset
     from .layer.tilemap_layer import TilemapLayer
     from .layer.grid_layer import GridLayer
+    from grid_element.tile import Tile
 
 
 class Tilemap(GridMap):
@@ -13,15 +14,20 @@ class Tilemap(GridMap):
     The layers are ordered by default, but it's not mandatory to use them in order.
     """
 
-    def __init__(self, grid_size: tuple[int, int], tile_size: tuple[int, int]):
-        super().__init__(grid_size, tile_size)
+    def __init__(
+        self,
+        tile_size: tuple[int, int],
+        grid_size: tuple[int, int] = (5, 5),
+        min_grid_size: tuple[int, int] = (5, 5),
+        max_grid_size: tuple[int, int] = (100, 100),
+    ):
+        super().__init__(tile_size, grid_size, min_grid_size, max_grid_size)
 
         self.tilesets: set["Tileset"] = set()
 
     def add_layer(self, layer: "GridLayer", position: int | Literal["end"] = "end"):
         """Add a layer to the tilemap. By default, it will be added to the end of the list, so it's a good practice to add layers in order."""
         layer = cast("TilemapLayer", layer)
-        layer.tile_size = self.tile_size
         self._add_tileset(layer.tileset)
 
         super().add_layer(layer, position)
@@ -45,6 +51,18 @@ class Tilemap(GridMap):
     def add_remove_tile_callback_to_all_layers(self, callback):
         for layer in self.layers:
             layer.add_remove_tile_callback(callback)
+
+    def get_layer(self, name: str) -> "TilemapLayer":
+        """Get a layer by its name."""
+        return cast("TilemapLayer", super().get_layer(name))
+
+    @property
+    def all_tiles(self):
+        """Get all tiles in the tilemap."""
+        tiles: list["Tile"] = []
+        for layer in self.layers:
+            tiles.extend(layer.tiles)
+        return tiles
 
     @staticmethod
     def add_layer_concurrence(*layers: "TilemapLayer"):

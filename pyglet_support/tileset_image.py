@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from PIL import Image
 
 if TYPE_CHECKING:
-    from ..tileset import Tileset
+    from ..tileset.tileset import Tileset
 
 
 class TilesetImage:
@@ -12,7 +12,7 @@ class TilesetImage:
         self.tileset = tileset
 
         self.tile_images = np.empty(
-            (tileset.size[0], tileset.size[1]),
+            (tileset.grid_size[0], tileset.grid_size[1]),
             dtype=object,
         )
 

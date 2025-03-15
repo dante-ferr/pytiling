@@ -10,12 +10,6 @@ class LayerChecker:
     def __init__(self, layer: "GridLayer"):
         self.layer = layer
 
-    def check_grid(self):
-        if self.layer._grid is None:
-            raise ValueError(
-                "Grid is not initialized. Make sure to add this layer to a tilemap before adding tiles."
-            )
-
     def check_position(self, position: tuple[int, int] | None):
         if position is None:
             raise ValueError(

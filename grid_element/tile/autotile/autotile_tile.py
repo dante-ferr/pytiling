@@ -1,9 +1,9 @@
-from ..tile import Tile
+from .. import Tile
 import warnings
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...layer.tilemap_layer.tilemap_layer_neighbor_processor import (
+    from layer.tilemap_layer.tilemap_layer_neighbor_processor import (
         TilemapLayerNeighborProcessor,
     )
     from .autotile_rule import AutotileRule
@@ -17,16 +17,24 @@ class AutotileTile(Tile):
     is_deep = False
 
     def __init__(self, position: tuple[int, int], autotile_object: str):
-        super().__init__(position)
-        self.autotile_object = autotile_object
+        super().__init__(position, tile_object=autotile_object)
 
         self.layer_neighbor_processor: "TilemapLayerNeighborProcessor | None" = None
-        self.layer_set_callbacks.append(self._on_layer_set)
 
         self.display = (0, 0)
 
+    @property
+    def layer(self):
+        return super().layer
+
+    @layer.setter
+    def layer(self, layer: "TilemapLayer"):
+        """Set the tile's layer."""
+        self._on_layer_set(layer)
+        super().layer = layer
+
     def _on_layer_set(self, layer: "TilemapLayer"):
-        from ...layer.tilemap_layer.tilemap_layer_neighbor_processor import (
+        from layer.tilemap_layer.tilemap_layer_neighbor_processor import (
             TilemapLayerNeighborProcessor,
         )
 
@@ -59,7 +67,7 @@ class AutotileTile(Tile):
             if rule_index >= len(self.rules):
                 warnings.warn("No display found", UserWarning)
                 return (0, 0)
-            rule = self.layer.autotile_rules[self.autotile_object][rule_index]
+            rule = self.layer.autotile_rules[self.tile_object][rule_index]
 
             for y, row in enumerate(rule.rule_matrix):
                 for x, cell in enumerate(row):

@@ -2,6 +2,8 @@ from PIL import Image
 import numpy as np
 import warnings
 from typing import Any, Callable
+from .tile_image_wrapper import TileImageWrapper
+from functools import cached_property
 
 
 class Tileset:
@@ -10,7 +12,7 @@ class Tileset:
     def __init__(self, tileset_path: str):
         self.atlas_image = Image.open(tileset_path)
         self._tile_size: tuple[int, int] | None = None
-        self._tile_images: np.ndarray[tuple[int, int], Any] | None = None
+        self._tile_image_wrappers: np.ndarray[tuple[int, int], Any] | None = None
 
     @property
     def tile_size(self) -> tuple[int, int]:
@@ -22,17 +24,34 @@ class Tileset:
 
         return self._tile_size
 
+    @property
+    def tile_image_wrappers(self) -> np.ndarray[tuple[int, int], Any]:
+        """Get the tile image wrappers of the tileset."""
+        if self._tile_image_wrappers is None:
+            raise ValueError(
+                "Tile images not set for the tileset. Ensure it has been added to a tilemap (this is done automatically when adding a layer with this tileset to a tilemap)."
+            )
+
+        return self._tile_image_wrappers
+
+    @tile_image_wrappers.setter
+    def tile_image_wrappers(self, value: np.ndarray[tuple[int, int], Any]):
+        """Set the tile image wrappers of the tileset."""
+        self._tile_image_wrappers = value
+
     @tile_size.setter
     def tile_size(self, value: tuple[int, int]):
         """Set the tile size of the tileset."""
         self._tile_size = value
 
-        if not self._tile_images:
-            self._tile_images = self._get_tile_images()
+        if not self._tile_image_wrappers:
+            self.tile_image_wrappers = self._get_tile_image_wrappers()
 
-    def _get_tile_images(self) -> np.ndarray[tuple[int, int], Any]:
+    def _get_tile_image_wrappers(self) -> np.ndarray[tuple[int, int], Any]:
         tile_width, tile_height = self.tile_size
-        tile_images = np.empty((self.grid_size[0], self.grid_size[1]), dtype=object)
+        tile_image_wrappers = np.empty(
+            (self.grid_size[0], self.grid_size[1]), dtype=object
+        )
 
         if self.atlas_image.width % tile_width != 0:
             warnings.warn(
@@ -54,11 +73,11 @@ class Tileset:
                 tile_x = x // tile_width
                 tile_y = y // tile_height
 
-                tile_images[tile_x, tile_y] = tile_image
+                tile_image_wrappers[tile_x, tile_y] = TileImageWrapper(tile_image)
 
-        return tile_images
+        return tile_image_wrappers
 
-    @property
+    @cached_property
     def grid_size(self) -> tuple[int, int]:
         """Get the grid size of the tileset."""
         if not self.tile_size:
@@ -68,15 +87,19 @@ class Tileset:
             self.atlas_image.height // self.tile_size[1],
         )
 
-    @property
-    def tile_images(self):
-        """Get the tile images as a numpy array. The format of each image is bytes."""
-        if self._tile_images is None:
-            raise ValueError(
-                "Tile images not set for the tileset. Ensure it has been added to a tilemap (this is done automatically when adding a layer with this tileset to a tilemap)."
-            )
+    def tile_has_transparency(self, display: tuple[int, int]) -> bool:
+        """Check if a tile has transparency."""
+        return self.tile_image_wrappers[display[0], display[1]].has_transparency
 
-        return self._tile_images
+    @cached_property
+    def tile_images(self) -> np.ndarray[tuple[int, int], Any]:
+        """Get the tile images as a numpy array. The format of each image is bytes."""
+
+        tile_images = np.empty((self.grid_size[0], self.grid_size[1]), dtype=object)
+        for x in range(self.grid_size[0]):
+            for y in range(self.grid_size[1]):
+                tile_images[x, y] = self.tile_image_wrappers[x, y].image
+        return tile_images
 
     def for_tile_image(self, callback: Callable[[bytes, int, int], None]):
         """

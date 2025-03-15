@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Literal, Callable, Union
 import numpy as np
-from ...tile.autotile import AutotileTile
+from grid_element.tile.autotile import AutotileTile
 
 
 if TYPE_CHECKING:
     from . import TilemapLayer
-    from ...tile import Tile
+    from grid_element.tile import Tile
 
 Neighbor = Union[Literal["out_of_grid"], "Tile"]
 
@@ -121,7 +121,7 @@ class TilemapLayerNeighborProcessor:
                 neighbor is not None
                 and isinstance(tile, AutotileTile)
                 and isinstance(neighbor, AutotileTile)
-                and neighbor.autotile_object == tile.autotile_object
+                and neighbor.tile_object == tile.tile_object
             ):
                 return neighbor
         else:

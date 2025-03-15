@@ -1,7 +1,7 @@
 from ..layer.tilemap_layer import TilemapLayer
 import math
 from typing import Literal, Callable
-from ..tile.tile import Tile
+from grid_element.tile import Tile
 from typing import TypedDict
 from ..layer.tilemap_layer import TilemapLayerNeighborProcessor
 

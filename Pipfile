@@ -8,6 +8,7 @@ pillow = "*"
 pymunk = "*"
 pyglet = "*"
 numpy = "*"
+pytiling = {file = ".", editable = true}
 
 [dev-packages]
 

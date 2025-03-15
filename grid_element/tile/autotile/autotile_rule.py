@@ -1,4 +1,4 @@
-from ...utils import rotate_matrix
+from utils import rotate_matrix
 import numpy as np
 
 

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b63b5991f18da871aeb6251280d6420ff75fe8b9799b24011b469f202baaf98b"
+            "sha256": "7c2e7e42b8315a304dd48f0fc03ca07c4000df68fd8678dac2e54a26dedf33da"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -312,6 +312,10 @@
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==6.11.1"
+        },
+        "pytiling": {
+            "editable": true,
+            "file": "."
         }
     },
     "develop": {}

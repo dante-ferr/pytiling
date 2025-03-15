@@ -3,7 +3,7 @@ from pyglet.window import mouse
 
 if TYPE_CHECKING:
     from .layer_renderer import LayerRenderer
-    from tile.tile import Tile
+    from grid_element.tile import Tile
 
 
 def create_tile_on_click(

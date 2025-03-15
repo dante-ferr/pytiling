@@ -6,7 +6,7 @@ from ..utils import refine_texture
 if TYPE_CHECKING:
     from layer.tilemap_layer.tilemap_layer import TilemapLayer
     from .tileset_image import TilesetImage
-    from tile.tile import Tile
+    from grid_element.tile import Tile
     from pyglet.image import Texture
 
 

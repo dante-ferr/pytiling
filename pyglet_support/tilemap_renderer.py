@@ -6,7 +6,7 @@ from .layer_renderer import LayerRenderer
 from .tileset_image import TilesetImage
 
 if TYPE_CHECKING:
-    from tileset import Tileset
+    from tileset.tileset import Tileset
 
 
 class PygletTilemapRenderer:
