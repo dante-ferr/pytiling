@@ -1,7 +1,7 @@
 import pyglet
 from typing import TYPE_CHECKING
-from ..tools.tilemap_border_tracer import TilemapBorderTracer
-from ..tilemap import Tilemap
+from pytiling.tools.tilemap_border_tracer import TilemapBorderTracer
+from pytiling.tilemap import Tilemap
 from .layer_renderer import LayerRenderer
 from .tileset_image import TilesetImage
 

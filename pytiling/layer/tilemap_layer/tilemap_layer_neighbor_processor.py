@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Literal, Callable, Union
 import numpy as np
-from grid_element.tile.autotile import AutotileTile
+from pytiling.grid_element.tile.autotile import AutotileTile
 
 
 if TYPE_CHECKING:

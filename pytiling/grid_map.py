@@ -1,8 +1,8 @@
 from .utils import Direction, direction_vectors
-from typing import TYPE_CHECKING, Literal, Sequence, Any, Callable
+from typing import TYPE_CHECKING, Literal, Sequence, Union, Callable
 
 if TYPE_CHECKING:
-    from layer import GridLayer
+    from .layer import GridLayer
 
 
 class GridMap:
@@ -50,8 +50,8 @@ class GridMap:
     def size(self):
         tile_width, tile_height = self.tile_size
         return (
-            self.grid_size[1] * tile_width,
-            self.grid_size[0] * tile_height,
+            self.grid_size[0] * tile_width,
+            self.grid_size[1] * tile_height,
         )
 
     @property
@@ -73,14 +73,6 @@ class GridMap:
         for layer in self._layers:
             layer.resize(size)
 
-    def position_is_valid(self, position: tuple[int, int]):
-        return (
-            position[0] >= 0
-            and position[1] >= 0
-            and position[0] < self.grid_size[1]
-            and position[1] < self.grid_size[0]
-        )
-
     def get_layer(self, name: str) -> "GridLayer":
         """Get a layer by its name."""
         if name in self._layers_dict:
@@ -100,43 +92,72 @@ class GridMap:
     def expand_towards(
         self,
         direction: Direction,
-        fill_callback: Callable[[tuple[int, int]], Any],
         size=1,
     ):
         """Expand the grid in the specified direction."""
-        if (
-            self.grid_size[0] + direction_vectors[direction][0] * size
-            > self.max_grid_size[0]
-            or self.grid_size[1] + direction_vectors[direction][1] * size
-            > self.max_grid_size[1]
-        ):
+        shift = self._get_shift(direction, size)
+        new_size = (
+            self.grid_size[0] + shift[0],
+            self.grid_size[1] + shift[1],
+        )
+        if new_size[0] > self.max_grid_size[0] or new_size[1] > self.max_grid_size[1]:
             return
 
         print("Expanding towards", direction, size)
-        self.grid_size = (
-            self.grid_size[0] + abs(direction_vectors[direction][0] * size),
-            self.grid_size[1] + abs(direction_vectors[direction][1] * size),
-        )
+        self.grid_size = new_size
 
         for layer in self.layers:
-            layer.expand_towards(direction, fill_callback, size)
+            layer.expand_towards(direction, size)
+
+        return self.get_edge_positions(direction)
 
     def reduce_towards(self, direction: Direction, size=1):
         """Reduce the grid in the specified direction."""
-        if (
-            self.grid_size[0] - direction_vectors[direction][0] * size
-            <= self.min_grid_size[0]
-            or self.grid_size[1] - direction_vectors[direction][1] * size
-            <= self.min_grid_size[1]
-        ):
+        shift = self._get_shift(direction, size)
+        new_size = (
+            self.grid_size[0] - shift[0],
+            self.grid_size[1] - shift[1],
+        )
+        if new_size[0] < self.min_grid_size[0] or new_size[1] < self.min_grid_size[1]:
             return
 
-        self.grid_size = (
-            self.grid_size[0] - abs(direction_vectors[direction][0] * size),
-            self.grid_size[1] - abs(direction_vectors[direction][1] * size),
-        )
-
         print("Reducing towards", direction, size)
+        deleted_tiles_positions = self.get_edge_positions(direction, size)
+
+        self.grid_size = new_size
 
         for layer in self.layers:
             layer.reduce_towards(direction, size)
+
+        return deleted_tiles_positions
+
+    def _get_shift(self, direction: Direction, size: int) -> tuple[int, int]:
+        return (
+            abs(direction_vectors[direction][0] * size),
+            abs(direction_vectors[direction][1] * size),
+        )
+
+    def get_edge_positions(
+        self, edge: Union[Direction, Literal["all"]] = "all", retreat=0
+    ):
+        """Get the positions of the edges of the layer."""
+        width, height = self.grid_size
+        edge_positions: set[tuple[int, int]] = set()
+
+        if edge in ("left", "all"):
+            for y in range(height):
+                edge_positions.add((retreat, y))
+
+        if edge in ("right", "all"):
+            for y in range(height):
+                edge_positions.add((width - 1 - retreat, y))
+
+        if edge in ("bottom", "all"):
+            for x in range(width):
+                edge_positions.add((x, height - 1 - retreat))
+
+        if edge in ("top", "all"):
+            for x in range(width):
+                edge_positions.add((x, retreat))
+
+        return list(edge_positions)

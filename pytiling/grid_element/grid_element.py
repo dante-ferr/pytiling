@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from pytiling.utils import Direction
 
 if TYPE_CHECKING:
     from layer import GridLayer
@@ -50,3 +51,32 @@ class GridElement:
             return
 
         return layer_below.get_element_at(self.position)
+
+    @property
+    def edges(self) -> list[Direction] | None:
+        """Returns the edges which the tile is on, or None if the tile is not on the edge."""
+        edges: list[Direction] = []
+        layer_width, layer_height = self.layer.grid_size
+
+        if self.position[1] == 0:
+            edges.append("top")
+        if self.position[1] == layer_height - 1:
+            edges.append("bottom")
+        if self.position[0] == 0:
+            edges.append("left")
+        if self.position[0] == layer_width - 1:
+            edges.append("right")
+
+        if len(edges) == 0:
+            return None
+        return edges
+
+    @property
+    def is_on_edge(self) -> bool:
+        """Returns True if the tile is on an edge, False otherwise."""
+        return (
+            self.position[0] == 0
+            or self.position[0] == self.layer.size[0] - 1
+            or self.position[1] == 0
+            or self.position[1] == self.layer.size[1] - 1
+        )

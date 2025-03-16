@@ -50,7 +50,7 @@ class Tileset:
     def _get_tile_image_wrappers(self) -> np.ndarray[tuple[int, int], Any]:
         tile_width, tile_height = self.tile_size
         tile_image_wrappers = np.empty(
-            (self.grid_size[0], self.grid_size[1]), dtype=object
+            (self.grid_size[1], self.grid_size[0]), dtype=object
         )
 
         if self.atlas_image.width % tile_width != 0:
@@ -73,7 +73,7 @@ class Tileset:
                 tile_x = x // tile_width
                 tile_y = y // tile_height
 
-                tile_image_wrappers[tile_x, tile_y] = TileImageWrapper(tile_image)
+                tile_image_wrappers[tile_y, tile_x] = TileImageWrapper(tile_image)
 
         return tile_image_wrappers
 
@@ -89,16 +89,16 @@ class Tileset:
 
     def tile_has_transparency(self, display: tuple[int, int]) -> bool:
         """Check if a tile has transparency."""
-        return self.tile_image_wrappers[display[0], display[1]].has_transparency
+        return self.tile_image_wrappers[display[1], display[0]].has_transparency
 
     @cached_property
     def tile_images(self) -> np.ndarray[tuple[int, int], Any]:
         """Get the tile images as a numpy array. The format of each image is bytes."""
 
-        tile_images = np.empty((self.grid_size[0], self.grid_size[1]), dtype=object)
+        tile_images = np.empty((self.grid_size[1], self.grid_size[0]), dtype=object)
         for x in range(self.grid_size[0]):
             for y in range(self.grid_size[1]):
-                tile_images[x, y] = self.tile_image_wrappers[x, y].image
+                tile_images[y, x] = self.tile_image_wrappers[y, x].image
         return tile_images
 
     def for_tile_image(self, callback: Callable[[bytes, int, int], None]):

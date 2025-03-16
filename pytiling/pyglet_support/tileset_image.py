@@ -12,7 +12,7 @@ class TilesetImage:
         self.tileset = tileset
 
         self.tile_images = np.empty(
-            (tileset.grid_size[0], tileset.grid_size[1]),
+            (tileset.grid_size[1], tileset.grid_size[0]),
             dtype=object,
         )
 
@@ -20,7 +20,7 @@ class TilesetImage:
 
     def _populate_tile_images(self, byte_data: bytes, x: int, y: int):
         """Populate the tile images array with pyglet images."""
-        self.tile_images[x, y] = self._create_pyglet_image_from_bytes(byte_data)
+        self.tile_images[y, x] = self._create_pyglet_image_from_bytes(byte_data)
 
     def _create_pyglet_image_from_bytes(self, byte_data: bytes):
         """Create a pyglet image from a byte data."""
@@ -35,4 +35,4 @@ class TilesetImage:
 
     def get_tile_image(self, display: tuple[int, int]) -> pyglet.image.ImageData | None:
         """Get the pyglet image for a tile."""
-        return self.tile_images[display[0], display[1]]
+        return self.tile_images[display[1], display[0]]

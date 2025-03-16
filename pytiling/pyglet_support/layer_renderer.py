@@ -1,12 +1,11 @@
-import pyglet
 import numpy as np
 from typing import Any, TYPE_CHECKING
-from ..utils import refine_texture
+from pytiling.utils import refine_texture
 
 if TYPE_CHECKING:
-    from layer.tilemap_layer.tilemap_layer import TilemapLayer
+    from pytiling.layer.tilemap_layer.tilemap_layer import TilemapLayer
     from .tileset_image import TilesetImage
-    from grid_element.tile import Tile
+    from pytiling.grid_element.tile import Tile
     from pyglet.image import Texture
 
 

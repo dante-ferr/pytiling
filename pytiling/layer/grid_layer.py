@@ -2,12 +2,18 @@ from typing import TypedDict, Callable
 import numpy as np
 from .layer_checker import LayerChecker
 from functools import cached_property
-from utils import reduce_grid_towards, expand_grid_towards, Direction
+from pytiling.utils import (
+    reduce_grid_towards,
+    expand_grid_towards,
+    Direction,
+    opposite_directions,
+    direction_vectors,
+)
 from typing import TYPE_CHECKING, Literal, Any, Union, cast
 
 if TYPE_CHECKING:
     from ..grid_map import GridMap
-    from grid_element import GridElement
+    from pytiling.grid_element import GridElement
 
 
 class Area(TypedDict):
@@ -99,7 +105,6 @@ class GridLayer:
                 "Grid is not initialized. Make sure to add this layer to a tilemap before adding tiles."
             )
 
-        assert self._grid is not None
         return self._grid
 
     @grid.setter
@@ -110,7 +115,7 @@ class GridLayer:
     @property
     def grid_size(self) -> tuple[int, int]:
         """Get the size of the grid."""
-        return self.grid.shape
+        return (self.grid.shape[1], self.grid.shape[0])
 
     def resize(self, size: tuple[int, int]):
         """Set the size of the grid."""
@@ -201,40 +206,48 @@ class GridLayer:
     def expand_towards(
         self,
         direction: Direction,
-        fill_callback: Callable[[tuple[int, int]], Any],
         size: int,
     ):
-        """Expand the grid in the specified direction."""
-        self.grid = expand_grid_towards(self.grid, direction, fill_callback, size)
+        """Expand the grid in the specified direction. Returns the positions that were added."""
+        self.grid = expand_grid_towards(self.grid, direction, size)
+        print(f"Grid size: {self.grid.shape}")
+
+        if direction == "top" or direction == "left":
+            self.shift_elements_towards(opposite_directions[direction], size)
 
     def reduce_towards(self, direction: Direction, size: int):
         """Reduce the grid in the specified direction."""
+        # deleted_elements = [
+        #     element for element in self.get_edge_elements(direction)
+        # ]
         self.grid = reduce_grid_towards(self.grid, direction, size)
 
-    def get_edge_positions(
+        if direction == "top" or direction == "left":
+            self.shift_elements_towards(direction, size)
+
+    def shift_elements_towards(self, direction: Direction, size: int):
+        """Shift the grid in the specified direction."""
+        for x in range(self.grid.shape[0]):
+            for y in range(self.grid.shape[1]):
+                element = self.grid[x, y]
+                if element is None:
+                    continue
+                element.position = (
+                    element.position[0] + direction_vectors[direction][0] * size,
+                    element.position[1] + direction_vectors[direction][1] * size,
+                )
+
+    def get_edge_elements(
         self, edge: Union[Direction, Literal["all"]] = "all", retreat=0
     ):
-        """Get the positions of the edges of the layer."""
-        height, width = self.grid_size
-        edge_positions: set[tuple[int, int]] = set()
+        """Get a set of elements on specified edges of the layer's grid, ensuring no duplicates at corners."""
+        edge_elements: "list[GridElement | None]" = []
 
-        if edge in ("left", "all"):
-            for y in range(height):
-                edge_positions.add((retreat, y))
+        for pos in self.grid_map.get_edge_positions(edge, retreat=retreat):
+            element = self.get_element_at(pos)
+            edge_elements.append(element)
 
-        if edge in ("right", "all"):
-            for y in range(height):
-                edge_positions.add((width - 1 - retreat, y))
-
-        if edge in ("bottom", "all"):
-            for x in range(width):
-                edge_positions.add((x, height - 1 - retreat))
-
-        if edge in ("top", "all"):
-            for x in range(width):
-                edge_positions.add((x, retreat))
-
-        return list(edge_positions)
+        return edge_elements
 
     def get_element_at(self, position: tuple[int, int]):
         """Get an element at a given position, or None if there is no element at that position."""

@@ -1,13 +1,14 @@
 from .. import Tile
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from layer.tilemap_layer.tilemap_layer_neighbor_processor import (
+    from pytiling.layer.tilemap_layer.tilemap_layer_neighbor_processor import (
         TilemapLayerNeighborProcessor,
     )
     from .autotile_rule import AutotileRule
-    from layer.tilemap_layer import TilemapLayer
+    from pytiling.layer.tilemap_layer import TilemapLayer
+    from pytiling.layer import GridLayer
 
 
 class AutotileTile(Tile):
@@ -28,16 +29,13 @@ class AutotileTile(Tile):
         return super().layer
 
     @layer.setter
-    def layer(self, layer: "TilemapLayer"):
+    def layer(self, layer: "GridLayer"):
         """Set the tile's layer."""
+        layer = cast("TilemapLayer", layer)
         self._on_layer_set(layer)
-        super().layer = layer
+        self._layer = layer
 
     def _on_layer_set(self, layer: "TilemapLayer"):
-        from layer.tilemap_layer.tilemap_layer_neighbor_processor import (
-            TilemapLayerNeighborProcessor,
-        )
-
         self.layer_neighbor_processor = layer.autotile_neighbor_processor
 
     def format(self):

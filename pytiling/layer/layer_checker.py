@@ -18,13 +18,13 @@ class LayerChecker:
 
         if not self.position_is_valid(position):
             raise ValueError(
-                f"Position {position} is not valid, because it is out of bounds for the grid ({self.layer.grid.shape})."
+                f"Position {position} is not valid, because it is out of bounds for the grid {self.layer.grid_size}."
             )
 
     def position_is_valid(self, position: tuple[int, int]):
         return (
             position[0] >= 0
             and position[1] >= 0
-            and position[0] < self.layer.grid.shape[1]
-            and position[1] < self.layer.grid.shape[0]
+            and position[0] < self.layer.grid_size[0]
+            and position[1] < self.layer.grid_size[1]
         )

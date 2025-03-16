@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from .tileset.tileset import Tileset
     from .layer.tilemap_layer import TilemapLayer
     from .layer.grid_layer import GridLayer
-    from grid_element.tile import Tile
+    from .grid_element.tile import Tile
 
 
 class Tilemap(GridMap):
@@ -71,3 +71,11 @@ class Tilemap(GridMap):
             other_layers = [l for l in layers if l is not layer]
             for other_layer in other_layers:
                 layer.add_concurrent_layer(other_layer)
+
+    def position_is_valid(self, position: tuple[int, int]):
+        return (
+            position[0] >= 0
+            and position[1] >= 0
+            and position[0] < self.grid_size[0]
+            and position[1] < self.grid_size[1]
+        )

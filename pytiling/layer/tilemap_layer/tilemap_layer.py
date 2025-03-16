@@ -1,14 +1,14 @@
 from typing import Union, Callable, cast, TYPE_CHECKING, Literal
 import numpy as np
-from ...tileset.tileset import Tileset
-from grid_element.tile.autotile.default_autotile_rules import default_rules
-from grid_element.tile.autotile.autotile_tile import AutotileTile
+from pytiling.tileset.tileset import Tileset
+from pytiling.grid_element.tile.autotile.default_autotile_rules import default_rules
+from pytiling.grid_element.tile.autotile.autotile_tile import AutotileTile
 from .tilemap_layer_formatter import TilemapLayerFormatter
 from ..layer_checker import LayerChecker
 from ..grid_layer import GridLayer
 from .tilemap_layer_neighbor_processor import TilemapLayerNeighborProcessor
 from functools import cached_property
-from ...utils import Direction
+from pytiling.utils import Direction
 
 if TYPE_CHECKING:
     from grid_element.tile import Tile
@@ -37,6 +37,7 @@ class TilemapLayer(GridLayer):
 
     def add_tile(self, tile: "Tile", apply_formatting=True):
         """Add a tile to the layer's grid. Also formats the tile and its potential neighbors."""
+        print(f"Grid size: {self.grid.shape}")
         self.checker.check_position(tile.position)
 
         # TODO: Make concurrency a feature of grid_layer.
@@ -53,13 +54,13 @@ class TilemapLayer(GridLayer):
                 return
             self.remove_tile(tile, apply_formatting=False)
 
+        super().add_element(tile)
+
         if isinstance(tile, AutotileTile):
             self._handle_add_autotile_tile(tile, apply_formatting)
 
         if apply_formatting:
             self.formatter.format_tile(tile)
-
-        super().add_element(tile)
 
     def _concurrent_tiles_at(self, position: tuple[int, int]):
         concurrent_tiles: list["Tile"] = []
@@ -130,15 +131,14 @@ class TilemapLayer(GridLayer):
             return cast("Tile", self.grid[position[1], position[0]])
         return None
 
-    def get_edge_tiles(self, edge: Union[Direction, Literal["all"]] = "all", retreat=0):
+    def get_edge_tiles(
+        self, edge: Union[Direction, Literal["all"]] = "all", retreat=0
+    ) -> "list[Tile | None]":
         """Get a set of tiles on specified edges of the layer's grid, ensuring no duplicates at corners."""
-        edge_tiles: list[Tile | None] = []
-
-        for pos in self.get_edge_positions(edge, retreat=retreat):
-            tile = self.get_tile_at(pos)
-            edge_tiles.append(tile)
-
-        return edge_tiles
+        return [
+            cast("Tile | None", element)
+            for element in self.get_edge_elements(edge, retreat)
+        ]
 
     @cached_property
     def layer_above(self) -> "TilemapLayer | None":

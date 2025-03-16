@@ -1,7 +1,6 @@
 from typing import cast
 import random
 from functools import cached_property
-from utils import Direction
 from ..grid_element import GridElement
 from typing import TYPE_CHECKING
 
@@ -38,7 +37,7 @@ class Tile(GridElement):
     @layer.setter
     def layer(self, layer: "GridLayer"):
         """Set the tile's layer."""
-        super().layer = layer
+        self._layer = layer
 
     def remove(self, apply_formatting=True):
         """Remove the tile from its layer."""
@@ -84,35 +83,6 @@ class Tile(GridElement):
             return
 
         return cast("Tile | None", super().element_below)
-
-    @property
-    def edges(self) -> list[Direction] | None:
-        """Returns the edges which the tile is on, or None if the tile is not on the edge."""
-        edges: list[Direction] = []
-        layer_width, layer_height = self.layer.size
-
-        if self.position[1] == 0:
-            edges.append("top")
-        elif self.position[1] == layer_height - 1:
-            edges.append("bottom")
-        if self.position[0] == 0:
-            edges.append("left")
-        if self.position[0] == layer_width - 1:
-            edges.append("right")
-
-        if len(edges) == 0:
-            return None
-        return edges
-
-    @property
-    def is_on_edge(self) -> bool:
-        """Returns True if the tile is on an edge, False otherwise."""
-        return (
-            self.position[0] == 0
-            or self.position[0] == self.layer.size[0] - 1
-            or self.position[1] == 0
-            or self.position[1] == self.layer.size[1] - 1
-        )
 
     # def get_image(self):
     #     return self.tilemap.tileset.get_tile_image(self.position)
