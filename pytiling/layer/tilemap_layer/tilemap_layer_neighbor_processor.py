@@ -121,7 +121,7 @@ class TilemapLayerNeighborProcessor:
                 neighbor is not None
                 and isinstance(tile, AutotileTile)
                 and isinstance(neighbor, AutotileTile)
-                and neighbor.tile_object == tile.tile_object
+                and neighbor.name == tile.name
             ):
                 return neighbor
         else:

@@ -17,8 +17,8 @@ class AutotileTile(Tile):
     rules: list["AutotileRule"]
     is_deep = False
 
-    def __init__(self, position: tuple[int, int], autotile_object: str):
-        super().__init__(position, tile_object=autotile_object)
+    def __init__(self, position: tuple[int, int], name: str):
+        super().__init__(position, name=name)
 
         self.layer_neighbor_processor: "TilemapLayerNeighborProcessor | None" = None
 
@@ -39,9 +39,11 @@ class AutotileTile(Tile):
         self.layer_neighbor_processor = layer.autotile_neighbor_processor
 
     def format(self):
-        """Format the tile's display"""
+        """Format the tile's display. Return True if the tile's display has changed."""
+        previous_display = self.display
+
         if self.layer_neighbor_processor is None:
-            return
+            raise ValueError("Tile is not in a layer to be formatted.")
 
         if (
             self.layer_neighbor_processor.get_amount_of_neighbors_of(self, radius=2)
@@ -58,6 +60,8 @@ class AutotileTile(Tile):
 
         super().format()
 
+        return self.display != previous_display
+
     def _rule_format(self, neighbors_bool_grid):
         """Change the tile's display based on the rules it has."""
 
@@ -65,7 +69,7 @@ class AutotileTile(Tile):
             if rule_index >= len(self.rules):
                 warnings.warn("No display found", UserWarning)
                 return (0, 0)
-            rule = self.layer.autotile_rules[self.tile_object][rule_index]
+            rule = self.layer.autotile_rules[self.name][rule_index]
 
             for y, row in enumerate(rule.rule_matrix):
                 for x, cell in enumerate(row):

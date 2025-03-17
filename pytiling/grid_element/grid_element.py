@@ -6,8 +6,17 @@ if TYPE_CHECKING:
 
 
 class GridElement:
-    def __init__(self, position: tuple[int, int]):
+    def __init__(
+        self,
+        position: tuple[int, int],
+        name: str = "",
+        unique: bool = False,
+    ):
         self.position = position
+        self.name = name
+        self.unique = unique
+
+        self.locked = False
 
         self._layer: "GridLayer | None" = None
 

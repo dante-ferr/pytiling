@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Literal, Sequence, Union, Callable
 
 if TYPE_CHECKING:
     from .layer import GridLayer
+    from .grid_element import GridElement
 
 
 class GridMap:
@@ -26,6 +27,14 @@ class GridMap:
     def add_size_change_callback(self, callback: Callable):
         """Add a callback to be called when the grid size changes."""
         self.size_change_callbacks.append(callback)
+
+    def add_create_element_callback_to_all_layers(self, callback):
+        for layer in self.layers:
+            layer.add_create_element_callback(callback)
+
+    def add_remove_element_callback_to_all_layers(self, callback):
+        for layer in self.layers:
+            layer.add_remove_element_callback(callback)
 
     def add_layer(self, layer: "GridLayer", position: int | Literal["end"] = "end"):
         """Add a layer to the tilemap. By default, it will be added to the end of the list, so it's a good practice to add layers in order."""
@@ -103,7 +112,6 @@ class GridMap:
         if new_size[0] > self.max_grid_size[0] or new_size[1] > self.max_grid_size[1]:
             return
 
-        print("Expanding towards", direction, size)
         self.grid_size = new_size
 
         for layer in self.layers:
@@ -112,7 +120,7 @@ class GridMap:
         return self.get_edge_positions(direction)
 
     def reduce_towards(self, direction: Direction, size=1):
-        """Reduce the grid in the specified direction."""
+        """Reduce the grid in the specified direction. Returns the deleted elements into a dict by layer name."""
         shift = self._get_shift(direction, size)
         new_size = (
             self.grid_size[0] - shift[0],
@@ -121,15 +129,13 @@ class GridMap:
         if new_size[0] < self.min_grid_size[0] or new_size[1] < self.min_grid_size[1]:
             return
 
-        print("Reducing towards", direction, size)
-        deleted_tiles_positions = self.get_edge_positions(direction, size)
+        deleted_elements: dict[str, list["GridElement | None"]] = {}
+        for layer in self.layers:
+            deleted_elements[layer.name] = layer.reduce_towards(direction, size)
 
         self.grid_size = new_size
 
-        for layer in self.layers:
-            layer.reduce_towards(direction, size)
-
-        return deleted_tiles_positions
+        return deleted_elements
 
     def _get_shift(self, direction: Direction, size: int) -> tuple[int, int]:
         return (
@@ -138,9 +144,10 @@ class GridMap:
         )
 
     def get_edge_positions(
-        self, edge: Union[Direction, Literal["all"]] = "all", retreat=0
+        self, edge: Union[Direction, Literal["all"]] = "all", size=1, retreat=0
     ):
         """Get the positions of the edges of the layer."""
+        # TODO: make it support sizes greater than 1
         width, height = self.grid_size
         edge_positions: set[tuple[int, int]] = set()
 

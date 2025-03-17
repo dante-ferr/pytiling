@@ -10,6 +10,7 @@
 # sys.path.append(current_folder)
 
 
+from .grid_element import GridElement
 from .grid_element.tile.autotile.autotile_tile import AutotileTile
 from .grid_element.tile.autotile.autotile_rule import AutotileRule
 from .grid_element.tile import Tile
@@ -20,7 +21,7 @@ from .tileset.tileset import Tileset
 from .tools.tilemap_border_tracer import TilemapBorderTracer
 from .physics.pymunk_tilemap_physics import PymunkTilemapPhysics
 from .grid_map import GridMap
-
+from .utils.direction import Direction, direction_vectors, opposite_directions
 
 __all__ = [
     "AutotileRule",
@@ -33,4 +34,8 @@ __all__ = [
     "TilemapBorderTracer",
     "PymunkTilemapPhysics",
     "GridMap",
+    "GridElement",
+    "Direction",
+    "direction_vectors",
+    "opposite_directions",
 ]

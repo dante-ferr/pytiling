@@ -44,14 +44,6 @@ class Tilemap(GridMap):
         for layer in self.layers:
             layer.formatter.add_format_callback(callback)
 
-    def add_create_tile_callback_to_all_layers(self, callback):
-        for layer in self.layers:
-            layer.add_create_tile_callback(callback)
-
-    def add_remove_tile_callback_to_all_layers(self, callback):
-        for layer in self.layers:
-            layer.add_remove_tile_callback(callback)
-
     def get_layer(self, name: str) -> "TilemapLayer":
         """Get a layer by its name."""
         return cast("TilemapLayer", super().get_layer(name))

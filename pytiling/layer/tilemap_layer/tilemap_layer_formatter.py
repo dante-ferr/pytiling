@@ -13,7 +13,7 @@ class TilemapLayerFormatter:
         self.format_callbacks: list[Callable] = []
 
     def add_format_callback(self, callback: Callable):
-        """Add a callback to be called when any tile in the layer is formatted."""
+        """Add a callback to be called when the layer is formatted and the tile's display has changed."""
         self.format_callbacks.append(callback)
 
     def format_area(self, area: "Area | Literal['all']" = "all", format_center=False):
@@ -45,10 +45,12 @@ class TilemapLayerFormatter:
 
     def format_tile(self, tile: "Tile"):
         """Format a tile."""
-        tile.format()
-        for callback in self.format_callbacks:
-            callback(tile)
+        tile_changed = tile.format()
+
+        if tile_changed:
+            for callback in self.format_callbacks:
+                callback(tile)
 
     def format_all_tiles(self):
         """Format all tiles in the layer."""
-        self.layer.for_all_tiles(self.format_tile)
+        self.layer.for_all_elements(self.format_tile)
