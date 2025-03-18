@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Callable, Literal
+from pytiling.grid_element.tile.autotile import AutotileTile
 
 if TYPE_CHECKING:
     from . import TilemapLayer
@@ -16,32 +17,16 @@ class TilemapLayerFormatter:
         """Add a callback to be called when the layer is formatted and the tile's display has changed."""
         self.format_callbacks.append(callback)
 
-    def format_area(self, area: "Area | Literal['all']" = "all", format_center=False):
-        """Format the grid of tiles."""
-        radius = 2
-        if area == "all":
-            area = Area(
-                top_left=(0, 0),
-                bottom_right=(
-                    self.layer.grid.shape[1] - radius,
-                    self.layer.grid.shape[0] - radius,
-                ),
-            )
-
-        def tile_format_callback(x, y):
-            area_center = (
-                area["bottom_right"][0] // 2,
-                area["bottom_right"][1] // 2,
-            )
-            if not format_center and x == area_center[0] and y == area_center[1]:
-                return
-
-            tile = self.layer.get_tile_at((x, y))
-            if tile is None:
-                return
-            self.format_tile(tile)
-
-        self.layer.loop_over_area(area, tile_format_callback)
+    def format_autotile_tile_neighbors(self, tile: "AutotileTile"):
+        # self.formatter.format_area(self.get_area_around(tile.position, 2))
+        tile_neighbors = self.layer.autotile_neighbor_processor.get_neighbors_of(
+            tile, radius=2
+        )
+        for row in tile_neighbors:
+            for neighbor in row:
+                if not isinstance(neighbor, AutotileTile):
+                    continue
+                self.format_tile(neighbor)
 
     def format_tile(self, tile: "Tile"):
         """Format a tile."""

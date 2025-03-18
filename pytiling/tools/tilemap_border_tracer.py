@@ -60,17 +60,17 @@ class TilemapBorderTracer:
         self.tilemap_layer = tilemap_layer
         self.nodes: dict[tuple[int, int], Node] = {}
         self.lines: set[Line] = set()
-        self.create_tile_callback: list[Callable] = []
+        self.create_element_callbacks: list[Callable] = []
 
         self.neighbor_processor = TilemapLayerNeighborProcessor(
             tilemap_layer, same_autotile_object=True, adjancecy_rule="four"
         )
 
-        tilemap_layer.add_create_tile_callback(self._handle_create_tile)
+        tilemap_layer.add_create_element_callback(self._handle_create_tile)
 
-    def add_create_tile_callback(self, callback: Callable):
+    def add_create_element_callback(self, callback: Callable):
         """Add a callback to be called when a tile is created. This ensures that the borders area already updated before the callback is executed."""
-        self.create_tile_callback.append(callback)
+        self.create_element_callbacks.append(callback)
 
     def _handle_create_tile(self, tile: Tile):
         """Executed when a tile is added. This function will check if the tile is a border tile and if it is, it will create lines in the tilemap border."""
@@ -100,7 +100,7 @@ class TilemapBorderTracer:
         handle_neighbor((x - 1, y), ((x, y), (x, y + 1)), "vertical")
         handle_neighbor((x, y + 1), ((x, y + 1), (x + 1, y + 1)), "horizontal")
 
-        for callback in self.create_tile_callback:
+        for callback in self.create_element_callbacks:
             callback(tile)
 
     def _process_border(

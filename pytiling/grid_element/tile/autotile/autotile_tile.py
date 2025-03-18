@@ -1,6 +1,8 @@
 from .. import Tile
 import warnings
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, Callable, TypedDict
+import json
+import os
 
 if TYPE_CHECKING:
     from pytiling.layer.tilemap_layer.tilemap_layer_neighbor_processor import (
@@ -11,18 +13,48 @@ if TYPE_CHECKING:
     from pytiling.layer import GridLayer
 
 
+class Variation(TypedDict):
+    display: list[int]
+    chance: float
+
+
+path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "default_shallow_tile_variations.json"
+)
+with open(path, "r") as file:
+    default_shallow_tile_variations = cast(list[Variation], json.load(file))
+
+
 class AutotileTile(Tile):
     """A class representing an autotile tile. It extends the Tile class and adds the ability to change its display based on the rules it has. Each rule defines a specific display based on the tile's neighbors."""
 
-    rules: list["AutotileRule"]
-    is_deep = False
-
-    def __init__(self, position: tuple[int, int], name: str):
+    def __init__(
+        self,
+        position: tuple[int, int],
+        name: str,
+        default_shallow_tile_variations: bool = True,
+    ):
         super().__init__(position, name=name)
 
-        self.layer_neighbor_processor: "TilemapLayerNeighborProcessor | None" = None
-
         self.display = (0, 0)
+        self.rules: list["AutotileRule"] = []
+        self.post_autotile_callbacks: list[Callable] = []
+
+        if default_shallow_tile_variations:
+            self.set_default_shallow_tile_variations()
+
+    def set_default_shallow_tile_variations(self):
+        def _callback(tile: "AutotileTile"):
+            if tile.is_shallow:
+                for variation in default_shallow_tile_variations:
+                    display = (variation["display"][0], variation["display"][1])
+                    tile.add_variation(display, variation["chance"])
+
+        self.add_post_autotile_callback(_callback)
+
+    def add_post_autotile_callback(self, callback: Callable):
+        """Add a callback to be called after the autotile calculation is done."""
+        self.post_autotile_callbacks.append(callback)
 
     @property
     def layer(self):
@@ -32,38 +64,29 @@ class AutotileTile(Tile):
     def layer(self, layer: "GridLayer"):
         """Set the tile's layer."""
         layer = cast("TilemapLayer", layer)
-        self._on_layer_set(layer)
         self._layer = layer
 
-    def _on_layer_set(self, layer: "TilemapLayer"):
-        self.layer_neighbor_processor = layer.autotile_neighbor_processor
+    @property
+    def neighbor_processor(self):
+        return self.layer.autotile_neighbor_processor
 
     def format(self):
         """Format the tile's display. Return True if the tile's display has changed."""
         previous_display = self.display
 
-        if self.layer_neighbor_processor is None:
-            raise ValueError("Tile is not in a layer to be formatted.")
+        neighbors_bool_grid = self.neighbor_processor.get_neighbors_bool_grid(self)
 
-        if (
-            self.layer_neighbor_processor.get_amount_of_neighbors_of(self, radius=2)
-            == 16
-        ):
-            self.is_deep = True
-        else:
-            self.is_deep = False
-
-        neighbors_bool_grid = self.layer_neighbor_processor.get_neighbors_bool_grid(
-            self
-        )
-        self._rule_format(neighbors_bool_grid)
+        display_changed = self._autotile_calculate(neighbors_bool_grid)
+        for callback in self.post_autotile_callbacks:
+            callback(self)
 
         super().format()
 
         return self.display != previous_display
 
-    def _rule_format(self, neighbors_bool_grid):
-        """Change the tile's display based on the rules it has."""
+    def _autotile_calculate(self, neighbors_bool_grid):
+        """Change the tile's display based on the rules it has. Returns True if the tile's display has changed, or False otherwise."""
+        self.reset_variations()
 
         def find_display(rule_index: int):
             if rule_index >= len(self.rules):
@@ -86,4 +109,22 @@ class AutotileTile(Tile):
 
             return rule.display
 
+        previous_display = self.display
         self.display = find_display(0)
+        return self.display != previous_display
+
+    @property
+    def is_deep(self):
+        # print(self.neighbor_processor.get_amount_of_neighbors_of(self, radius=2))
+        return self.neighbor_processor.get_amount_of_neighbors_of(self, radius=2) == 24
+
+    @property
+    def is_shallow(self):
+        return (
+            self.neighbor_processor.get_amount_of_neighbors_of(self, radius=1) == 8
+            and not self.is_deep
+        )
+
+    @property
+    def is_border(self):
+        return self.neighbor_processor.get_amount_of_neighbors_of(self, radius=1) < 8

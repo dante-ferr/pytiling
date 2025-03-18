@@ -72,17 +72,14 @@ class TilemapLayer(GridLayer):
         tile.rules = self.autotile_rules[tile.name]
 
         if apply_formatting:
-            self._format_autotile_tile_neighbors(tile)
+            self.formatter.format_autotile_tile_neighbors(tile)
 
-    def _format_autotile_tile_neighbors(self, tile: "AutotileTile"):
-        tile_neighbors = self.autotile_neighbor_processor.get_neighbors_of(
-            tile, radius=2
-        )
-        for row in tile_neighbors:
-            for neighbor in row:
-                if not isinstance(neighbor, AutotileTile):
-                    continue
-                self.formatter.format_tile(neighbor)
+    def remove_tile_at(self, position: tuple[int, int], apply_formatting=True):
+        """Remove a tile at a given position."""
+        tile = self.get_tile_at(position)
+        if tile is None:
+            return False
+        return self.remove_tile(tile, apply_formatting)
 
     def remove_tile(self, tile: "Tile", apply_formatting=True):
         """Remove a tile from the layer's grid. Returns True if the tile was removed, False if it was not."""
@@ -90,10 +87,17 @@ class TilemapLayer(GridLayer):
             return False
 
         super().remove_element(tile)
-        if apply_formatting:
-            self.formatter.format_area(self.get_area_around(tile.position, 1))
+        if isinstance(tile, AutotileTile):
+            self._handle_remove_autotile_tile(tile, apply_formatting)
 
         return True
+
+    def _handle_remove_autotile_tile(
+        self, tile: "AutotileTile", apply_formatting: bool
+    ):
+        """Handle removing an autotile tile from the layer."""
+        if apply_formatting:
+            self.formatter.format_autotile_tile_neighbors(tile)
 
     @property
     def tiles(self):
