@@ -49,7 +49,7 @@ class GridLayer:
 
     def initialize_grid(self, size: tuple[int, int]):
         """Initialize the grid of the layer."""
-        self.grid = np.empty(size, dtype=object)
+        self.grid = np.empty((size[1], size[0]), dtype=object)
 
     def add_create_element_callback(self, callback: Callable):
         """Add a callback to be called when any element in the layer is added."""
@@ -159,8 +159,8 @@ class GridLayer:
     def size(self):
         tile_width, tile_height = self.tile_size
         return (
-            self.grid.shape[1] * tile_width,
-            self.grid.shape[0] * tile_height,
+            self.grid_size[0] * tile_width,
+            self.grid_size[1] * tile_height,
         )
 
     @property
@@ -232,8 +232,8 @@ class GridLayer:
 
     def for_grid_position(self, callback: Callable):
         """Loops over each grid position in the layer's grid, calling the given callback."""
-        for y in range(self.grid.shape[0]):
-            for x in range(self.grid.shape[1]):
+        for x in range(self.grid_size[0]):
+            for y in range(self.grid_size[1]):
                 callback(x, y)
 
     @cached_property
@@ -305,3 +305,20 @@ class GridLayer:
         if self.checker.position_is_valid(position):
             return cast("GridElement", self.grid[position[1], position[0]])
         return None
+
+    @property
+    def elements(self) -> list["GridElement"]:
+        """Get a list of all elements in the layer."""
+        elements: list["GridElement"] = []
+        self.for_all_elements(lambda element: elements.append(element))
+        return elements
+
+    def get_elements(self, *names: str) -> list["GridElement"]:
+        """Get a list of elements with any of the given names."""
+        elements: list["GridElement"] = []
+        for element in self.elements:
+            for name in names:
+                if element.name == name:
+                    elements.append(element)
+
+        return elements

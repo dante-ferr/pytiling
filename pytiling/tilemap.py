@@ -51,10 +51,7 @@ class Tilemap(GridMap):
     @property
     def all_tiles(self):
         """Get all tiles in the tilemap."""
-        tiles: list["Tile"] = []
-        for layer in self.layers:
-            tiles.extend(layer.tiles)
-        return tiles
+        return cast("list[Tile]", self.all_elements)
 
     @staticmethod
     def add_layer_concurrence(*layers: "TilemapLayer"):

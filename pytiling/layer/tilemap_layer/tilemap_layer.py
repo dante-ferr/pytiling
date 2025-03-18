@@ -102,9 +102,7 @@ class TilemapLayer(GridLayer):
     @property
     def tiles(self):
         """Get all tiles in the layer."""
-        tiles: list["Tile"] = []
-        self.for_all_elements(lambda tile: tiles.append(tile))
-        return tiles
+        return cast(list[Tile], self.elements)
 
     def add_autotile_rule(self, name, *rules):
         """Append one or more rules to the list of rules for a specific autotile object."""

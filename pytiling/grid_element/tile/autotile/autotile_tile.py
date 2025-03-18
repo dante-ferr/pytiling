@@ -115,7 +115,6 @@ class AutotileTile(Tile):
 
     @property
     def is_deep(self):
-        # print(self.neighbor_processor.get_amount_of_neighbors_of(self, radius=2))
         return self.neighbor_processor.get_amount_of_neighbors_of(self, radius=2) == 24
 
     @property

@@ -168,3 +168,11 @@ class GridMap:
                 edge_positions.add((x, retreat))
 
         return list(edge_positions)
+
+    @property
+    def all_elements(self) -> list["GridElement"]:
+        """Get a list of all elements in the grid map."""
+        elements: list["GridElement"] = []
+        for layer in self.layers:
+            elements.extend(layer.elements)
+        return elements
