@@ -32,7 +32,7 @@ class TilemapLayer(GridLayer):
         self.formatter = TilemapLayerFormatter(self)
 
     def create_autotile_tile_at(
-        self, position: tuple[int, int], name: str, apply_formatting=True, **args
+        self, position: tuple[int, int], name: str, apply_formatting=False, **args
     ):
         """Create an autotile tile at a given position."""
         tile = AutotileTile(position, name, **args)
@@ -44,7 +44,7 @@ class TilemapLayer(GridLayer):
         position: tuple[int, int],
         display: tuple[int, int],
         name="",
-        apply_formatting=True,
+        apply_formatting=False,
         **args
     ):
         """Create a tile at a given position."""
@@ -52,7 +52,7 @@ class TilemapLayer(GridLayer):
         tile_added = self.add_tile(tile, apply_formatting)
         return tile if tile_added else None
 
-    def add_tile(self, tile: "Tile", apply_formatting=True):
+    def add_tile(self, tile: "Tile", apply_formatting=False):
         """Add a tile to the layer's grid. Also formats the tile and its potential neighbors. Returns True if the tile was added, False if it was not."""
         if not super().add_element(tile):
             return False
@@ -61,7 +61,7 @@ class TilemapLayer(GridLayer):
             self._handle_add_autotile_tile(tile, apply_formatting)
 
         if apply_formatting:
-            self.formatter.format_tile(tile)
+            tile.format()
 
         return True
 
@@ -74,14 +74,14 @@ class TilemapLayer(GridLayer):
         if apply_formatting:
             self.formatter.format_autotile_tile_neighbors(tile)
 
-    def remove_tile_at(self, position: tuple[int, int], apply_formatting=True):
+    def remove_tile_at(self, position: tuple[int, int], apply_formatting=False):
         """Remove a tile at a given position."""
         tile = self.get_tile_at(position)
         if tile is None:
             return False
         return self.remove_tile(tile, apply_formatting)
 
-    def remove_tile(self, tile: "Tile", apply_formatting=True):
+    def remove_tile(self, tile: "Tile", apply_formatting=False):
         """Remove a tile from the layer's grid. Returns True if the tile was removed, False if it was not."""
         if tile.locked:
             return False

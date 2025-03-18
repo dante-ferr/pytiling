@@ -223,18 +223,18 @@ class GridLayer:
     def for_all_elements(self, callback: Callable):
         """Loops over each element in the layer's grid, calling the given callback."""
 
-        def position_callback(x, y):
-            element = self.get_element_at((x, y))
+        def position_callback(position):
+            element = self.get_element_at(position)
             if element is not None:
-                callback(self.get_element_at((x, y)))
+                callback(self.get_element_at(position))
 
         self.for_grid_position(position_callback)
 
-    def for_grid_position(self, callback: Callable):
+    def for_grid_position(self, callback: Callable[[tuple[int, int]], None]):
         """Loops over each grid position in the layer's grid, calling the given callback."""
         for x in range(self.grid_size[0]):
             for y in range(self.grid_size[1]):
-                callback(x, y)
+                callback((x, y))
 
     @cached_property
     def layer_above(self) -> "GridLayer | None":

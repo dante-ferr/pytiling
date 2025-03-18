@@ -1,0 +1,22 @@
+[
+  {
+    "display": [0, 0],
+    "chance": 0.2
+  },
+  {
+    "display": [1, 0],
+    "chance": 0.2
+  },
+  {
+    "display": [2, 0],
+    "chance": 0.2
+  },
+  {
+    "display": [0, 1],
+    "chance": 0.2
+  },
+  {
+    "display": [1, 1],
+    "chance": 0.2
+  }
+]

@@ -3,6 +3,7 @@ import random
 from functools import cached_property
 from ..grid_element import GridElement
 from typing import TYPE_CHECKING
+import json
 
 if TYPE_CHECKING:
     from layer.tilemap_layer import TilemapLayer
@@ -28,6 +29,17 @@ class Tile(GridElement):
 
         self.variations: dict[tuple[int, int], float] = {}
 
+    def add_variations_from_json(self, json_path: str, apply_formatting=False):
+        with open(json_path, "r") as file:
+            variations_data = json.load(file)
+
+        for variation in variations_data:
+            display = (variation["display"][0], variation["display"][1])
+            self.add_variation(display, variation["chance"])
+
+        if apply_formatting:
+            self.format()
+
     @property
     def layer(self):
         return cast("TilemapLayer", super().layer)
@@ -47,6 +59,15 @@ class Tile(GridElement):
         """Format the tile's display. Return True if the tile's display has changed."""
         previous_display = self.display
 
+        self.set_variation_display()
+
+        for callback in self.layer.formatter.format_callbacks:
+            callback(self)
+
+        return previous_display != self.display
+
+    def set_variation_display(self):
+        """Set the tile's display to a random variation."""
         if len(self.variations) > 0:
             chosen_chance = random.random() * self.variations_chance_sum
 
@@ -56,8 +77,6 @@ class Tile(GridElement):
                 if chosen_chance < chance_sum:
                     self.set_display(potential_display)
                     break
-
-        return previous_display != self.display
 
     def add_variation(self, display: tuple[int, int], chance: float):
         """Add a variation to the tile. The tile will randomly choose one of the variations based on the chances provided. Therefore the chance can be any number, but the other variations added to this tile must be taken into account."""

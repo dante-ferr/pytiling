@@ -26,16 +26,8 @@ class TilemapLayerFormatter:
             for neighbor in row:
                 if not isinstance(neighbor, AutotileTile):
                     continue
-                self.format_tile(neighbor)
-
-    def format_tile(self, tile: "Tile"):
-        """Format a tile."""
-        tile_changed = tile.format()
-
-        if tile_changed:
-            for callback in self.format_callbacks:
-                callback(tile)
+                neighbor.format()
 
     def format_all_tiles(self):
         """Format all tiles in the layer."""
-        self.layer.for_all_elements(self.format_tile)
+        self.layer.for_all_elements(lambda tile: tile.format())

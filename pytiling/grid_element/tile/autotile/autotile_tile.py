@@ -18,11 +18,9 @@ class Variation(TypedDict):
     chance: float
 
 
-path = os.path.join(
+DEFAULT_SHALLOW_TILE_VARIATIONS_FILENAME = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "default_shallow_tile_variations.json"
 )
-with open(path, "r") as file:
-    default_shallow_tile_variations = cast(list[Variation], json.load(file))
 
 
 class AutotileTile(Tile):
@@ -32,7 +30,7 @@ class AutotileTile(Tile):
         self,
         position: tuple[int, int],
         name: str,
-        default_shallow_tile_variations: bool = True,
+        default_shallow_tile_variations: bool = False,
     ):
         super().__init__(position, name=name)
 
@@ -46,9 +44,7 @@ class AutotileTile(Tile):
     def set_default_shallow_tile_variations(self):
         def _callback(tile: "AutotileTile"):
             if tile.is_shallow:
-                for variation in default_shallow_tile_variations:
-                    display = (variation["display"][0], variation["display"][1])
-                    tile.add_variation(display, variation["chance"])
+                tile.add_variations_from_json(DEFAULT_SHALLOW_TILE_VARIATIONS_FILENAME)
 
         self.add_post_autotile_callback(_callback)
 
