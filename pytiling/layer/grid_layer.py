@@ -266,13 +266,10 @@ class GridLayer:
 
     def reduce_towards(self, direction: Direction, size: int):
         """Reduce the grid in the specified direction."""
-        deleted_elements = self.get_edge_elements(direction, size)
         self.grid = reduce_grid_towards(self.grid, direction, size)
 
         if direction == "top" or direction == "left":
             self.shift_elements_towards(direction, size)
-
-        return deleted_elements
 
     def shift_elements_towards(self, direction: Direction, size: int):
         """Shift the grid in the specified direction."""

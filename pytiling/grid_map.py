@@ -7,6 +7,11 @@ if TYPE_CHECKING:
 
 
 class GridMap:
+    RemovedPositions = list[tuple[int, int]]
+    NewPositions = list[tuple[int, int]]
+    ExpansionCallback = Callable[[Direction, int, NewPositions], None]
+    ReductionCallback = Callable[[Direction, int, RemovedPositions], None]
+
     def __init__(
         self,
         tile_size: tuple[int, int],
@@ -22,11 +27,16 @@ class GridMap:
         self._layers_dict: dict[str, "GridLayer"] = {}
         self._layers: list["GridLayer"] = []
 
-        self.size_change_callbacks: list[Callable] = []
+        self._expansion_callbacks: list[GridMap.ExpansionCallback] = []
+        self._reduction_callbacks: list[GridMap.ReductionCallback] = []
 
-    def add_size_change_callback(self, callback: Callable):
+    def add_expansion_callback(self, callback: ExpansionCallback):
         """Add a callback to be called when the grid size changes."""
-        self.size_change_callbacks.append(callback)
+        self._expansion_callbacks.append(callback)
+
+    def add_reduction_callback(self, callback: ReductionCallback):
+        """Add a callback to be called when the grid size changes."""
+        self._reduction_callbacks.append(callback)
 
     def add_create_element_callback_to_all_layers(self, callback):
         for layer in self.layers:
@@ -73,9 +83,6 @@ class GridMap:
         """Set the size of the tilemap. Note that this won't resize the layers."""
         self._grid_size = self.clamp_size(value)
 
-        for callback in self.size_change_callbacks:
-            callback()
-
     def resize(self, size: tuple[int, int]):
         """Set the size of the tilemap. This will resize all layers to match."""
         self._grid_size = size
@@ -118,8 +125,12 @@ class GridMap:
             layer.expand_towards(direction, size)
 
         self.grid_size = new_size
+        new_positions = self.get_edge_positions(direction)
 
-        return self.get_edge_positions(direction)
+        for callback in self._expansion_callbacks:
+            callback(direction, size, new_positions)
+
+        return new_positions
 
     def _can_expand_towards(self, new_size: tuple[int, int]) -> bool:
         """Check if the grid can expand in the specified direction."""
@@ -138,13 +149,16 @@ class GridMap:
         if not self._can_reduce_towards(new_size):
             return
 
-        deleted_elements: dict[str, list["GridElement | None"]] = {}
         for layer in self.layers:
-            deleted_elements[layer.name] = layer.reduce_towards(direction, size)
+            layer.reduce_towards(direction, size)
 
+        removed_positions = self.get_edge_positions(direction)
         self.grid_size = new_size
 
-        return deleted_elements
+        for callback in self._reduction_callbacks:
+            callback(direction, size, removed_positions)
+
+        return removed_positions
 
     def _can_reduce_towards(self, new_size: tuple[int, int]) -> bool:
         """Check if the grid can reduce in the specified direction."""
@@ -191,6 +205,18 @@ class GridMap:
         elements: list["GridElement"] = []
         for layer in self.layers:
             elements.extend(layer.elements)
+        return elements
+
+    def remove_all_elements_at(self, position: tuple[int, int]):
+        for element in self.all_elements_at(position):
+            element.remove()
+
+    def all_elements_at(self, position: tuple[int, int]):
+        elements: list["GridElement"] = []
+        for layer in self.layers:
+            element = layer.get_element_at(position)
+            if element:
+                elements.append(element)
         return elements
 
     def add_layer_concurrence(self, *layer_names: str):
