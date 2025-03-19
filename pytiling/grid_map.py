@@ -109,15 +109,24 @@ class GridMap:
             self.grid_size[0] + shift[0],
             self.grid_size[1] + shift[1],
         )
-        if new_size[0] > self.max_grid_size[0] or new_size[1] > self.max_grid_size[1]:
+        if not self._can_expand_towards(new_size):
             return
 
-        self.grid_size = new_size
+        # remember: grid_size was here before
 
         for layer in self.layers:
             layer.expand_towards(direction, size)
 
+        self.grid_size = new_size
+
         return self.get_edge_positions(direction)
+
+    def _can_expand_towards(self, new_size: tuple[int, int]) -> bool:
+        """Check if the grid can expand in the specified direction."""
+        return (
+            new_size[0] <= self.max_grid_size[0]
+            and new_size[1] <= self.max_grid_size[1]
+        )
 
     def reduce_towards(self, direction: Direction, size=1):
         """Reduce the grid in the specified direction. Returns the deleted elements into a dict by layer name."""
@@ -126,7 +135,7 @@ class GridMap:
             self.grid_size[0] - shift[0],
             self.grid_size[1] - shift[1],
         )
-        if new_size[0] < self.min_grid_size[0] or new_size[1] < self.min_grid_size[1]:
+        if not self._can_reduce_towards(new_size):
             return
 
         deleted_elements: dict[str, list["GridElement | None"]] = {}
@@ -136,6 +145,13 @@ class GridMap:
         self.grid_size = new_size
 
         return deleted_elements
+
+    def _can_reduce_towards(self, new_size: tuple[int, int]) -> bool:
+        """Check if the grid can reduce in the specified direction."""
+        return (
+            new_size[0] >= self.min_grid_size[0]
+            and new_size[1] >= self.min_grid_size[1]
+        )
 
     def _get_shift(self, direction: Direction, size: int) -> tuple[int, int]:
         return (
@@ -176,3 +192,26 @@ class GridMap:
         for layer in self.layers:
             elements.extend(layer.elements)
         return elements
+
+    def add_layer_concurrence(self, *layer_names: str):
+        """Make the specified layers concurrent. Tiles from concurrent layers won't be able to be placed on the same position. So the addition of a tile on a layer will remove the tiles at the same position from its concurrent layers."""
+        layers = [self.get_layer(name) for name in layer_names]
+
+        for layer in layers:
+            other_layers = [l for l in layers if l is not layer]
+            for other_layer in other_layers:
+                layer.add_concurrent_layer(other_layer)
+
+    def position_is_valid(self, position: tuple[int, int]):
+        return (
+            position[0] >= 0
+            and position[1] >= 0
+            and position[0] < self.grid_size[0]
+            and position[1] < self.grid_size[1]
+        )
+
+    def for_grid_position(self, callback: Callable[[tuple[int, int]], None]):
+        """Loops over each grid position in the layer's grid, calling the given callback."""
+        for x in range(self.grid_size[0]):
+            for y in range(self.grid_size[1]):
+                callback((x, y))

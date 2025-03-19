@@ -26,6 +26,7 @@ class GridLayer:
         self.name = name
         self._tile_size: tuple[int, int] | None = None
         self._grid_map: "GridMap | None" = None
+        self._grid: np.ndarray | None = None
 
         self.checker = LayerChecker(self)
 
@@ -49,7 +50,8 @@ class GridLayer:
 
     def initialize_grid(self, size: tuple[int, int]):
         """Initialize the grid of the layer."""
-        self.grid = np.empty((size[1], size[0]), dtype=object)
+        if self._grid is None:
+            self._grid = np.empty((size[1], size[0]), dtype=object)
 
     def add_create_element_callback(self, callback: Callable):
         """Add a callback to be called when any element in the layer is added."""
@@ -228,13 +230,7 @@ class GridLayer:
             if element is not None:
                 callback(self.get_element_at(position))
 
-        self.for_grid_position(position_callback)
-
-    def for_grid_position(self, callback: Callable[[tuple[int, int]], None]):
-        """Loops over each grid position in the layer's grid, calling the given callback."""
-        for x in range(self.grid_size[0]):
-            for y in range(self.grid_size[1]):
-                callback((x, y))
+        self.grid_map.for_grid_position(position_callback)
 
     @cached_property
     def layer_above(self) -> "GridLayer | None":

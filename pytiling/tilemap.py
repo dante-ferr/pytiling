@@ -53,18 +53,7 @@ class Tilemap(GridMap):
         """Get all tiles in the tilemap."""
         return cast("list[Tile]", self.all_elements)
 
-    @staticmethod
-    def add_layer_concurrence(*layers: "TilemapLayer"):
-        """Make the specified layers concurrent. Tiles from concurrent layers won't be able to be placed on the same position. So the addition of a tile on a layer will remove the tiles at the same position from its concurrent layers."""
-        for layer in layers:
-            other_layers = [l for l in layers if l is not layer]
-            for other_layer in other_layers:
-                layer.add_concurrent_layer(other_layer)
-
-    def position_is_valid(self, position: tuple[int, int]):
-        return (
-            position[0] >= 0
-            and position[1] >= 0
-            and position[0] < self.grid_size[0]
-            and position[1] < self.grid_size[1]
-        )
+    def format_all_tiles(self):
+        """Format all tiles in the tilemap."""
+        for layer in self.layers:
+            layer.formatter.format_all_tiles()
