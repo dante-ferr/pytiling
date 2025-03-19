@@ -95,8 +95,10 @@ class GridLayer:
         """Remove a element at a given position."""
         element = self.get_element_at(position)
         if element is None:
-            return False
-        return self.remove_element(element)
+            return None
+
+        self.remove_element(element)
+        return element
 
     def remove_element(self, element: "GridElement"):
         """Remove an element from the layer's grid."""
