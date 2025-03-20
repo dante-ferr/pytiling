@@ -61,8 +61,7 @@ class Tile(GridElement):
 
         self.set_variation_display()
 
-        for callback in self.layer.formatter.format_callbacks:
-            callback(self)
+        self.layer.events["tile_formatted"].send(tile=self)
 
         return previous_display != self.display
 

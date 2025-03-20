@@ -1,5 +1,4 @@
-from typing import Union, Callable, cast, TYPE_CHECKING, Literal
-import numpy as np
+from typing import Union, cast, TYPE_CHECKING, Literal
 from pytiling.tileset.tileset import Tileset
 from .tilemap_layer_formatter import TilemapLayerFormatter
 from ..grid_layer import GridLayer
@@ -12,6 +11,7 @@ from pytiling.grid_element.tile.autotile import (
     AutotileRule,
     default_rules,
 )
+from blinker import Signal
 
 if TYPE_CHECKING:
     from grid_element.tile.autotile import AutotileRule
@@ -24,12 +24,18 @@ class TilemapLayer(GridLayer):
 
     def __init__(self, name: str, tileset: Tileset):
         super().__init__(name)
+
         self.name = name
         self.tileset = tileset
         self.autotile_rules = {}
         self.autotile_neighbor_processor = TilemapLayerNeighborProcessor(self)
 
         self.formatter = TilemapLayerFormatter(self)
+
+        self.events = {
+            **self.events,
+            "tile_formatted": Signal(),
+        }
 
     def create_autotile_tile_at(
         self, position: tuple[int, int], name: str, apply_formatting=False, **args
@@ -115,9 +121,7 @@ class TilemapLayer(GridLayer):
 
     def get_tile_at(self, position: tuple[int, int]):
         """Get a tile at a given position."""
-        if self.checker.position_is_valid(position):
-            return cast("Tile", self.grid[position[1], position[0]])
-        return None
+        return cast("Tile | None", self.get_element_at(position))
 
     def get_edge_tiles(
         self, edge: Union[Direction, Literal["all"]] = "all", size=1, retreat=0

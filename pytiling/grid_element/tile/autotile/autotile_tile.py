@@ -1,8 +1,8 @@
 from .. import Tile
 import warnings
-from typing import TYPE_CHECKING, cast, Callable, TypedDict
-import json
+from typing import TYPE_CHECKING, cast, Literal, TypedDict
 import os
+from blinker import Signal
 
 if TYPE_CHECKING:
     from pytiling.layer.tilemap_layer.tilemap_layer_neighbor_processor import (
@@ -36,21 +36,19 @@ class AutotileTile(Tile):
 
         self.display = (0, 0)
         self.rules: list["AutotileRule"] = []
-        self.post_autotile_callbacks: list[Callable] = []
+        self.events: dict[str, Signal] = {
+            "post_autotile": Signal(),
+        }
 
         if default_shallow_tile_variations:
             self.set_default_shallow_tile_variations()
 
     def set_default_shallow_tile_variations(self):
-        def _callback(tile: "AutotileTile"):
+        def _callback(sender, tile: "AutotileTile"):
             if tile.is_shallow:
                 tile.add_variations_from_json(DEFAULT_SHALLOW_TILE_VARIATIONS_FILENAME)
 
-        self.add_post_autotile_callback(_callback)
-
-    def add_post_autotile_callback(self, callback: Callable):
-        """Add a callback to be called after the autotile calculation is done."""
-        self.post_autotile_callbacks.append(callback)
+        self.events["post_autotile"].connect(_callback, weak=False)
 
     @property
     def layer(self):
@@ -73,8 +71,7 @@ class AutotileTile(Tile):
         neighbors_bool_grid = self.neighbor_processor.get_neighbors_bool_grid(self)
 
         display_changed = self._autotile_calculate(neighbors_bool_grid)
-        for callback in self.post_autotile_callbacks:
-            callback(self)
+        self.events["post_autotile"].send(tile=self)
 
         super().format()
 

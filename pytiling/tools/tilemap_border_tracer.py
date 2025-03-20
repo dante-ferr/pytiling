@@ -4,6 +4,7 @@ from typing import Literal, Callable
 from pytiling.grid_element.tile import Tile
 from typing import TypedDict
 from ..layer.tilemap_layer import TilemapLayerNeighborProcessor
+from blinker import Signal
 
 
 def order_pos(positions: tuple[tuple[int, int], tuple[int, int]]):
@@ -60,19 +61,20 @@ class TilemapBorderTracer:
         self.tilemap_layer = tilemap_layer
         self.nodes: dict[tuple[int, int], Node] = {}
         self.lines: set[Line] = set()
-        self.create_element_callbacks: list[Callable] = []
 
         self.neighbor_processor = TilemapLayerNeighborProcessor(
             tilemap_layer, same_autotile_object=True, adjancecy_rule="four"
         )
 
-        tilemap_layer.add_create_element_callback(self._handle_create_tile)
+        self.events: dict[str, Signal] = {
+            "tile_created": Signal(),
+        }
 
-    def add_create_element_callback(self, callback: Callable):
-        """Add a callback to be called when a tile is created. This ensures that the borders area already updated before the callback is executed."""
-        self.create_element_callbacks.append(callback)
+        tilemap_layer.events["element_created"].connect(
+            self._handle_create_tile, weak=True
+        )
 
-    def _handle_create_tile(self, tile: Tile):
+    def _handle_create_tile(self, sender, tile: Tile):
         """Executed when a tile is added. This function will check if the tile is a border tile and if it is, it will create lines in the tilemap border."""
         neighbors = self.neighbor_processor.get_neighbors_bool_grid(tile)
         if tile.position is None:
@@ -100,8 +102,7 @@ class TilemapBorderTracer:
         handle_neighbor((x - 1, y), ((x, y), (x, y + 1)), "vertical")
         handle_neighbor((x, y + 1), ((x, y + 1), (x + 1, y + 1)), "horizontal")
 
-        for callback in self.create_element_callbacks:
-            callback(tile)
+        self.events["tile_created"].send(tile=tile)
 
     def _process_border(
         self,

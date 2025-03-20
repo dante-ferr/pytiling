@@ -1,5 +1,6 @@
 from .utils import Direction, direction_vectors
-from typing import TYPE_CHECKING, Literal, Sequence, Union, Callable
+from typing import TYPE_CHECKING, Literal, Sequence, Union, Callable, cast
+from blinker import Signal
 
 if TYPE_CHECKING:
     from .layer import GridLayer
@@ -9,8 +10,6 @@ if TYPE_CHECKING:
 class GridMap:
     RemovedPositions = list[tuple[int, int]]
     NewPositions = list[tuple[int, int]]
-    ExpansionCallback = Callable[[Direction, int, NewPositions], None]
-    ReductionCallback = Callable[[Direction, int, RemovedPositions], None]
 
     def __init__(
         self,
@@ -27,24 +26,14 @@ class GridMap:
         self._layers_dict: dict[str, "GridLayer"] = {}
         self._layers: list["GridLayer"] = []
 
-        self._expansion_callbacks: list[GridMap.ExpansionCallback] = []
-        self._reduction_callbacks: list[GridMap.ReductionCallback] = []
+        self.events: dict[str, Signal] = {
+            "expanded": Signal(),
+            "reducted": Signal(),
+        }
 
-    def add_expansion_callback(self, callback: ExpansionCallback):
-        """Add a callback to be called when the grid size changes."""
-        self._expansion_callbacks.append(callback)
-
-    def add_reduction_callback(self, callback: ReductionCallback):
-        """Add a callback to be called when the grid size changes."""
-        self._reduction_callbacks.append(callback)
-
-    def add_create_element_callback_to_all_layers(self, callback):
+    def on_layer_event(self, event_name: str, callback: Callable):
         for layer in self.layers:
-            layer.add_create_element_callback(callback)
-
-    def add_remove_element_callback_to_all_layers(self, callback):
-        for layer in self.layers:
-            layer.add_remove_element_callback(callback)
+            layer.events[event_name].connect(callback, weak=True)
 
     def add_layer(self, layer: "GridLayer", position: int | Literal["end"] = "end"):
         """Add a layer to the tilemap. By default, it will be added to the end of the list, so it's a good practice to add layers in order."""
@@ -127,8 +116,9 @@ class GridMap:
         self.grid_size = new_size
         new_positions = self.get_edge_positions(direction)
 
-        for callback in self._expansion_callbacks:
-            callback(direction, size, new_positions)
+        self.events["expanded"].send(
+            direction=direction, size=size, new_positions=new_positions
+        )
 
         return new_positions
 
@@ -155,8 +145,9 @@ class GridMap:
         removed_positions = self.get_edge_positions(direction)
         self.grid_size = new_size
 
-        for callback in self._reduction_callbacks:
-            callback(direction, size, removed_positions)
+        self.events["reducted"].send(
+            direction=direction, size=size, removed_positions=removed_positions
+        )
 
         return removed_positions
 

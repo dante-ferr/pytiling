@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal, cast, Sequence
+from typing import TYPE_CHECKING, Literal, cast, Sequence, Callable
 from .grid_map import GridMap
 
 if TYPE_CHECKING:
@@ -25,6 +25,10 @@ class Tilemap(GridMap):
 
         self.tilesets: set["Tileset"] = set()
 
+    def on_layer_event(self, event_name: str, callback: Callable):
+        for layer in self.layers:
+            layer.events[event_name].connect(callback, weak=True)
+
     def add_layer(self, layer: "GridLayer", position: int | Literal["end"] = "end"):
         """Add a layer to the tilemap. By default, it will be added to the end of the list, so it's a good practice to add layers in order."""
         layer = cast("TilemapLayer", layer)
@@ -39,10 +43,6 @@ class Tilemap(GridMap):
     def _add_tileset(self, tileset: "Tileset"):
         tileset.tile_size = self.tile_size
         self.tilesets.add(tileset)
-
-    def add_format_callback_to_all_layers(self, callback):
-        for layer in self.layers:
-            layer.formatter.add_format_callback(callback)
 
     def get_layer(self, name: str) -> "TilemapLayer":
         """Get a layer by its name."""

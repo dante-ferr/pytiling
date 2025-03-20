@@ -9,7 +9,8 @@ from pytiling.utils import (
     opposite_directions,
     direction_vectors,
 )
-from typing import TYPE_CHECKING, Literal, Any, Union, cast
+from typing import TYPE_CHECKING, Literal, Union, cast
+from blinker import Signal
 
 if TYPE_CHECKING:
     from ..grid_map import GridMap
@@ -22,6 +23,7 @@ class Area(TypedDict):
 
 
 class GridLayer:
+
     def __init__(self, name: str):
         self.name = name
         self._tile_size: tuple[int, int] | None = None
@@ -30,10 +32,12 @@ class GridLayer:
 
         self.checker = LayerChecker(self)
 
-        self.create_element_callbacks: list[Callable] = []
-        self.remove_element_callbacks: list[Callable[["GridElement", str], None]] = []
-
         self.concurrent_layers: list["GridLayer"] = []
+
+        self.events: dict[str, Signal] = {
+            "element_created": Signal(),
+            "element_removed": Signal(),
+        }
 
     def add_concurrent_layer(self, layer: "GridLayer"):
         """Add a layer to the list of concurrent layers. Tiles from concurrent layers won't be able to be placed on the same position. So the addition of a element on a layer will remove the elements at the same position from its concurrent layers."""
@@ -52,14 +56,6 @@ class GridLayer:
         """Initialize the grid of the layer."""
         if self._grid is None:
             self._grid = np.empty((size[1], size[0]), dtype=object)
-
-    def add_create_element_callback(self, callback: Callable):
-        """Add a callback to be called when any element in the layer is added."""
-        self.create_element_callbacks.append(callback)
-
-    def add_remove_element_callback(self, callback: Callable):
-        """Add a callback to be called when any element in the layer is removed."""
-        self.remove_element_callbacks.append(callback)
 
     def add_element(self, element: "GridElement"):
         """Add an element to the layer's grid."""
@@ -86,8 +82,7 @@ class GridLayer:
         element.layer = self
         self.grid[element.position[1], element.position[0]] = element
 
-        for callback in self.create_element_callbacks:
-            callback(element)
+        self.events["element_created"].send(element=element)
 
         return True
 
@@ -104,8 +99,7 @@ class GridLayer:
         """Remove an element from the layer's grid."""
         self.grid[element.position[1], element.position[0]] = None
 
-        for callback in self.remove_element_callbacks:
-            callback(element, self.name)
+        self.events["element_removed"].send(element=element, layer_name=self.name)
 
     def amount_of_namesakes(self, name: str):
         amount = 0
