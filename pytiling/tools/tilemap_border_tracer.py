@@ -66,13 +66,16 @@ class TilemapBorderTracer:
             tilemap_layer, same_autotile_object=True, adjancecy_rule="four"
         )
 
-        self.events: dict[str, Signal] = {
-            "tile_created": Signal(),
-        }
-
         tilemap_layer.events["element_created"].connect(
             self._handle_create_tile, weak=True
         )
+
+        self._restart_events()
+
+    def _restart_events(self):
+        self.events: dict[str, Signal] = {
+            "tile_created": Signal(),
+        }
 
     def _handle_create_tile(self, sender, tile: Tile):
         """Executed when a tile is added. This function will check if the tile is a border tile and if it is, it will create lines in the tilemap border."""
@@ -231,3 +234,14 @@ class TilemapBorderTracer:
             for y in range(line.start[1], line.end[1] + 1):
                 self.nodes[(x, y)].lines[line.orientation] = line
         self.lines.add(line)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+
+        state["events"] = {}
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+        self._restart_events()

@@ -32,7 +32,11 @@ class TilemapLayer(GridLayer):
 
         self.formatter = TilemapLayerFormatter(self)
 
-        self.events = {
+        self._restart_events()
+
+    def _restart_events(self):
+        super()._restart_events()
+        self.events: dict[str, Signal] = {
             **self.events,
             "tile_formatted": Signal(),
         }
@@ -141,3 +145,9 @@ class TilemapLayer(GridLayer):
     def layer_below(self) -> "TilemapLayer | None":
         """Get the layer below this layer (if it exists)."""
         return cast("TilemapLayer | None", super().layer_below)
+
+    def __getstate__(self):
+        return super().__getstate__()
+
+    def __setstate__(self, state):
+        super().__setstate__(state)

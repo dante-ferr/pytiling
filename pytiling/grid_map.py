@@ -26,6 +26,9 @@ class GridMap:
         self._layers_dict: dict[str, "GridLayer"] = {}
         self._layers: list["GridLayer"] = []
 
+        self._restart_events()
+
+    def _restart_events(self):
         self.events: dict[str, Signal] = {
             "expanded": Signal(),
             "reducted": Signal(),
@@ -232,3 +235,14 @@ class GridMap:
         for x in range(self.grid_size[0]):
             for y in range(self.grid_size[1]):
                 callback((x, y))
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+
+        state["events"] = {}
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+        self._restart_events()

@@ -34,6 +34,9 @@ class GridLayer:
 
         self.concurrent_layers: list["GridLayer"] = []
 
+        self._restart_events()
+
+    def _restart_events(self):
         self.events: dict[str, Signal] = {
             "element_created": Signal(),
             "element_removed": Signal(),
@@ -311,3 +314,14 @@ class GridLayer:
                     elements.append(element)
 
         return elements
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+
+        state["events"] = {}
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+        self._restart_events()

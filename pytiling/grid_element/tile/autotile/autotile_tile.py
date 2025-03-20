@@ -1,13 +1,10 @@
 from .. import Tile
 import warnings
-from typing import TYPE_CHECKING, cast, Literal, TypedDict
+from typing import TYPE_CHECKING, cast, TypedDict
 import os
 from blinker import Signal
 
 if TYPE_CHECKING:
-    from pytiling.layer.tilemap_layer.tilemap_layer_neighbor_processor import (
-        TilemapLayerNeighborProcessor,
-    )
     from .autotile_rule import AutotileRule
     from pytiling.layer.tilemap_layer import TilemapLayer
     from pytiling.layer import GridLayer
@@ -36,12 +33,16 @@ class AutotileTile(Tile):
 
         self.display = (0, 0)
         self.rules: list["AutotileRule"] = []
-        self.events: dict[str, Signal] = {
-            "post_autotile": Signal(),
-        }
+
+        self._restart_events()
 
         if default_shallow_tile_variations:
             self.set_default_shallow_tile_variations()
+
+    def _restart_events(self):
+        self.events: dict[str, Signal] = {
+            "post_autotile": Signal(),
+        }
 
     def set_default_shallow_tile_variations(self):
         def _callback(sender, tile: "AutotileTile"):
@@ -120,3 +121,14 @@ class AutotileTile(Tile):
     @property
     def is_border(self):
         return self.neighbor_processor.get_amount_of_neighbors_of(self, radius=1) < 8
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+
+        state["events"] = {}
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+        self._restart_events()
