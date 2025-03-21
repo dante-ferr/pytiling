@@ -88,19 +88,19 @@ class TilemapLayer(GridLayer):
         """Remove a tile at a given position."""
         tile = self.get_tile_at(position)
         if tile is None:
-            return False
+            return None
         return self.remove_tile(tile, apply_formatting)
 
     def remove_tile(self, tile: "Tile", apply_formatting=False):
         """Remove a tile from the layer's grid. Returns True if the tile was removed, False if it was not."""
         if tile.locked:
-            return False
+            return None
 
         super().remove_element(tile)
         if isinstance(tile, AutotileTile):
             self._handle_remove_autotile_tile(tile, apply_formatting)
 
-        return True
+        return tile
 
     def _handle_remove_autotile_tile(
         self, tile: "AutotileTile", apply_formatting: bool
