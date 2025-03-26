@@ -70,14 +70,12 @@ class TilemapBorderTracer:
             self._handle_create_tile, weak=True
         )
 
-        self._restart_events()
-
-    def _restart_events(self):
-        self.events: dict[str, Signal] = {
-            "tile_created": Signal(),
-        }
+        tilemap_layer.for_all_elements(self._add_borders_to_tile)
 
     def _handle_create_tile(self, sender, tile: Tile):
+        self._add_borders_to_tile(tile)
+
+    def _add_borders_to_tile(self, tile: Tile):
         """Executed when a tile is added. This function will check if the tile is a border tile and if it is, it will create lines in the tilemap border."""
         neighbors = self.neighbor_processor.get_neighbors_bool_grid(tile)
         if tile.position is None:
@@ -104,8 +102,6 @@ class TilemapBorderTracer:
         handle_neighbor((x, y - 1), ((x, y), (x + 1, y)), "horizontal")
         handle_neighbor((x - 1, y), ((x, y), (x, y + 1)), "vertical")
         handle_neighbor((x, y + 1), ((x, y + 1), (x + 1, y + 1)), "horizontal")
-
-        self.events["tile_created"].send(tile=tile)
 
     def _process_border(
         self,
@@ -151,13 +147,13 @@ class TilemapBorderTracer:
         pos = order_pos(positions)
         node_1, node_2 = (self.nodes.get(pos[0]), self.nodes.get(pos[1]))
         if node_1 is None or node_2 is None:
-            raise ValueError("Nodes must exist for split.")
+            return  # raise ValueError("Nodes must exist for split.")
         line_1, line_2 = (
             node_1.lines[orientation],
             node_2.lines[orientation],
         )
         if line_1 is None or line_2 is None:
-            raise ValueError("Lines must exist for split.")
+            return  # raise ValueError("Lines must exist for split.")
 
         if line_1 == line_2:
             line = line_1
@@ -234,14 +230,3 @@ class TilemapBorderTracer:
             for y in range(line.start[1], line.end[1] + 1):
                 self.nodes[(x, y)].lines[line.orientation] = line
         self.lines.add(line)
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-
-        state["events"] = {}
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-
-        self._restart_events()

@@ -12,7 +12,7 @@ class TilesetImage:
         self.tileset = tileset
 
         self.tile_images = np.empty(
-            (tileset.grid_size[1], tileset.grid_size[0]),
+            (tileset.grid_size[0], tileset.grid_size[1]),
             dtype=object,
         )
 
@@ -35,4 +35,4 @@ class TilesetImage:
 
     def get_tile_image(self, display: tuple[int, int]) -> pyglet.image.ImageData | None:
         """Get the pyglet image for a tile."""
-        return self.tile_images[display[1], display[0]]
+        return self.tile_images[display[0], display[1]]

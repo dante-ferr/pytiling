@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Callable
 from pyglet.window import mouse
 
 if TYPE_CHECKING:
-    from .layer_renderer import LayerRenderer
+    from .legacy.layer_renderer import LayerRenderer
     from grid_element.tile import Tile
 
 

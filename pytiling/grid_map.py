@@ -236,6 +236,39 @@ class GridMap:
             for y in range(self.grid_size[1]):
                 callback((x, y))
 
+    def grid_pos_to_actual_pos(
+        self, position: tuple[int, int], invert_x_axis=False, invert_y_axis=True
+    ) -> tuple[float, float]:
+        """Convert a tile position in the layer to an actual position in the window."""
+        tile_width, tile_height = self.tile_size
+        map_width, map_height = self.size
+        pos = [position[0] * tile_width, position[1] * tile_height]
+
+        if invert_x_axis:
+            pos[0] = map_width - pos[0]
+        if invert_y_axis:
+            pos[1] = map_height - pos[1]
+
+        return (pos[0], pos[1])
+
+    def actual_pos_to_grid_pos(
+        self, position: tuple[float, float], invert_x_axis=False, invert_y_axis=True
+    ):
+        """Convert an actual position in the window to a tile position in the layer."""
+        tile_width, tile_height = self.tile_size
+        map_width, map_height = self.size
+        pos: list[int] = [
+            int(position[0] // tile_width),
+            int(position[1] // tile_height + 1),
+        ]
+
+        if invert_x_axis:
+            pos[0] = int((map_width - position[0]) // tile_width)
+        if invert_y_axis:
+            pos[1] = int((map_height - position[1]) // tile_height + 1)
+
+        return (*pos,)
+
     def __getstate__(self):
         state = self.__dict__.copy()
 
