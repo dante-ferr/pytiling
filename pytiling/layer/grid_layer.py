@@ -40,6 +40,7 @@ class GridLayer:
         self.events: dict[str, Signal] = {
             "element_created": Signal(),
             "element_removed": Signal(),
+            "element_directly_removed": Signal(),
         }
 
     def add_concurrent_layer(self, layer: "GridLayer"):
@@ -68,7 +69,7 @@ class GridLayer:
         if same_layer_element_in_place is not None:
             if same_layer_element_in_place.locked:
                 return False
-            self.remove_element(element)
+            self._remove_element(element)
 
         concurrent_elements_in_place = self._concurrent_elements_at(element.position)
         for concurrent_element in concurrent_elements_in_place:
@@ -100,6 +101,14 @@ class GridLayer:
 
     def remove_element(self, element: "GridElement"):
         """Remove an element from the layer's grid."""
+        self._remove_element(element)
+
+        self.events["element_directly_removed"].send(
+            element=element, layer_name=self.name
+        )
+
+    def _remove_element(self, element: "GridElement"):
+        """Private method to remove an element from the layer's grid. The difference between this method and remove_element resides in the sent event: while this sends a generic element_removed event, remove_element sends a element_directly_removed event."""
         self.grid[element.position[1], element.position[0]] = None
 
         self.events["element_removed"].send(element=element, layer_name=self.name)
@@ -125,6 +134,9 @@ class GridLayer:
         self.for_all_elements(_check_name)
 
         return namesakes
+
+    def has_element_at(self, position: tuple[int, int]):
+        return self.get_element_at(position) is not None
 
     def grid_pos_to_actual_pos(
         self, position: tuple[int, int], invert_x_axis=False, invert_y_axis=True

@@ -50,7 +50,7 @@ class Tile(GridElement):
         self._layer = layer
 
     def remove(self, apply_formatting=True):
-        """Remove the tile from its layer."""
+        """Remove the tile from its layer. apply_formating is True by default because we want to format the tile's neighbors when it's removed because of layer concurrency."""
         if self.layer is None:
             raise ValueError("Tile is not in a layer to be removed.")
         self.layer.remove_tile(self, apply_formatting)

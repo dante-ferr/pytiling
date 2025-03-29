@@ -31,7 +31,8 @@ class GridElement:
         self.position = position
 
     @property
-    def layer(self):
+    def layer(self) -> "GridLayer":
+        """Get the element's layer."""
         if self._layer is None:
             raise ValueError(
                 "Layer is not set. Make sure to append the element to a layer before using it."
