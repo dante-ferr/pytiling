@@ -135,6 +135,9 @@ class GridLayer:
 
         return namesakes
 
+    def has_element_named(self, name: str):
+        return self.amount_of_namesakes(name) > 0
+
     def has_element_at(self, position: tuple[int, int]):
         return self.get_element_at(position) is not None
 
