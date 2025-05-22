@@ -1,0 +1,68 @@
+{
+  "rule_groups": [
+    {
+      "type": "outer_corner",
+      "position": [1, 0]
+    },
+    {
+      "type": "inner_corner",
+      "position": [3, 0]
+    },
+    {
+      "type": "thin_t_junction",
+      "position": [5, 0]
+    },
+    {
+      "type": "t_junction",
+      "position": [7, 0]
+    },
+    {
+      "type": "straight",
+      "position": [1, 2]
+    },
+    {
+      "type": "edge",
+      "position": [3, 2]
+    },
+    {
+      "type": "thin_corner",
+      "position": [5, 2]
+    },
+    {
+      "type": "d_junction",
+      "position": [7, 2]
+    },
+    {
+      "type": "b_junction",
+      "position": [9, 2]
+    },
+    {
+      "type": "fish_junction",
+      "position": [9, 0]
+    },
+    {
+      "type": "straight_thin",
+      "position": [11, 2],
+      "amount": 2
+    },
+    {
+      "type": "diagonal_junction",
+      "position": [11, 0],
+      "amount": 2
+    }
+  ],
+  "lone_rules": [
+    {
+      "type": "lone",
+      "position": [0, 1]
+    },
+    {
+      "type": "cross",
+      "position": [0, 2]
+    },
+    {
+      "type": "center",
+      "position": [0, 3]
+    }
+  ]
+}

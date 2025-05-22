@@ -1,0 +1,5 @@
+pymunk
+pyglet
+numpy
+pillow
+blinker

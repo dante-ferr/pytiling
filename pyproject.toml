@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytiling"
+version = "0.1.0"
+description = "A python library that handles tileset and tilemap creation, with helper tools for physics integration and pyglet rendering."
+authors = [
+  { name = "Dante Ferreira", email = "dante.tf5@gmail.com" }
+]
+requires-python = ">=3.11"
+
+dependencies = [
+  "pymunk",
+  "pyglet",
+  "numpy",
+  "pillow",
+  "blinker",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
