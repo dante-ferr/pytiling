@@ -1,1 +1,0 @@
-- Make layer_renderer textures unique per tileset image
