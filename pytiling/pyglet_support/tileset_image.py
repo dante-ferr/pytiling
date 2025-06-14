@@ -5,6 +5,7 @@ from PIL import Image
 
 if TYPE_CHECKING:
     from ..tileset.tileset import Tileset
+    from pyglet.image import ImageData
 
 
 class TilesetImage:
@@ -33,6 +34,6 @@ class TilesetImage:
             tile_width, tile_height, "RGBA", byte_data_flipped
         )
 
-    def get_tile_image(self, display: tuple[int, int]) -> pyglet.image.ImageData | None:
+    def get_tile_image(self, display: tuple[int, int]) -> "ImageData | None":
         """Get the pyglet image for a tile."""
         return self.tile_images[display[0], display[1]]

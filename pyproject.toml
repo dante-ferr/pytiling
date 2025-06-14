@@ -6,7 +6,7 @@ authors = ["Dante Ferreira"]
 packages = [{ include = "pytiling" }]
 
 [tool.poetry.dependencies]
-python = ">=3.13"
+python = ">=3.11"
 pymunk = "*"
 numpy = "*"
 pyglet = "*"

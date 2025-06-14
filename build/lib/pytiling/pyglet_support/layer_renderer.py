@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 import pyglet
-from pytiling.utils import refine_texture
+from pytiling.utils.refine_texture import refine_texture
 
 if TYPE_CHECKING:
     from pytiling.layer.tilemap_layer.tilemap_layer import TilemapLayer
