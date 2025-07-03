@@ -2,6 +2,7 @@ import numpy as np
 import pyglet
 from typing import TYPE_CHECKING, Any
 from PIL import Image
+from ..utils import set_pixelated_scaling
 
 if TYPE_CHECKING:
     from ..tileset.tileset import Tileset
@@ -30,9 +31,10 @@ class TilesetImage:
         image_data = Image.frombytes("RGBA", (tile_width, tile_height), byte_data)
         image_data = image_data.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
         byte_data_flipped = image_data.tobytes()
-        return pyglet.image.ImageData(
-            tile_width, tile_height, "RGBA", byte_data_flipped
+        pyglet_image = set_pixelated_scaling(
+            pyglet.image.ImageData(tile_width, tile_height, "RGBA", byte_data_flipped)
         )
+        return pyglet_image
 
     def get_tile_image(self, display: tuple[int, int]) -> "ImageData | None":
         """Get the pyglet image for a tile."""
