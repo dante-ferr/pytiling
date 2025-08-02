@@ -1,8 +1,8 @@
 import numpy as np
 import pyglet
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from PIL import Image
-from ..utils import set_pixelated_scaling
+from .utils import set_pixelated_scaling
 
 if TYPE_CHECKING:
     from ..tileset.tileset import Tileset

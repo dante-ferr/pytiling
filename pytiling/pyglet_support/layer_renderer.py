@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 import pyglet
-# from pytiling.utils.refine_texture import refine_texture
 
 if TYPE_CHECKING:
     from pytiling.layer.tilemap_layer.tilemap_layer import TilemapLayer
@@ -41,7 +40,6 @@ class LayerRenderer:
         spr = pyglet.sprite.Sprite(
             tile_image.get_texture(), x=tile_x, y=tile_y, batch=self.batch
         )
-        # refine_texture()
         self.sprites.append(spr)
 
     def render(self):

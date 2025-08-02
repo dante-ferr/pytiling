@@ -4,7 +4,6 @@ from .directional_grid_size_changing import (
     reduce_grid_towards,
 )
 from .direction import Direction, direction_vectors, opposite_directions
-from .set_pixelated_scaling import set_pixelated_scaling
 
 __all__ = [
     "rotate_matrix",
@@ -13,5 +12,4 @@ __all__ = [
     "Direction",
     "direction_vectors",
     "opposite_directions",
-    "set_pixelated_scaling",
 ]
