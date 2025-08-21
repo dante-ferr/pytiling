@@ -25,6 +25,13 @@ class Tilemap(GridMap):
 
         self.tilesets: set["Tileset"] = set()
 
+    def to_dict(self):
+        """Serialize the tilemap to a dictionary."""
+        data = super().to_dict()
+        data["__class__"] = "Tilemap"
+        # Tilesets are derived from layers, so no need to serialize them directly.
+        return data
+
     def on_layer_event(self, event_name: str, callback: Callable):
         for layer in self.layers:
             layer.events[event_name].connect(callback, weak=True)

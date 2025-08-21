@@ -51,6 +51,22 @@ class AutotileTile(Tile):
 
         self.events["post_autotile"].connect(_callback, weak=False)
 
+    def to_dict(self):
+        """Serialize the autotile tile to a dictionary."""
+        data = super().to_dict()
+        data["__class__"] = "AutotileTile"
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AutotileTile":
+        """Deserialize an autotile tile from a dictionary."""
+        tile = cls(
+            position=tuple(data["position"]),
+            name=data["name"],
+        )
+        tile._from_dict_data(data)
+        return tile
+
     @property
     def layer(self):
         return super().layer

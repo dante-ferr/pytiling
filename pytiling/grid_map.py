@@ -34,6 +34,69 @@ class GridMap:
             "reducted": Signal(),
         }
 
+    def to_dict(self):
+        """Serialize the map to a dictionary."""
+        return {
+            "__class__": "GridMap",
+            "tile_size": self.tile_size,
+            "grid_size": self.grid_size,
+            "min_grid_size": self.min_grid_size,
+            "max_grid_size": self.max_grid_size,
+            "layers": [layer.to_dict() for layer in self.layers],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """Deserialize a map from a dictionary."""
+        instance = cls._from_dict_base(data)
+        cls._setup_concurrency_from_data(data["layers"], instance)
+
+        return instance
+
+    @classmethod
+    def _from_dict_base(cls, data: dict):
+        """Creates an instance and populates it from a dictionary, without setting up concurrences."""
+        from .serialization import layer_from_dict
+
+        instance = cls._instance_from_data(data)
+
+        tilesets = {}  # To reuse tileset objects
+
+        # First, create layers and add them to the map to initialize them.
+        # This ensures that layer.grid and layer.grid_map are set before elements are added.
+        for layer_data in data["layers"]:
+            layer = layer_from_dict(layer_data, tilesets)
+            instance.add_layer(layer)
+
+        # Second, populate elements.
+        cls._populate_layers_from_data(data["layers"], instance)
+        return instance
+
+    @classmethod
+    def _instance_from_data(cls, data: dict):
+        return cls(
+            tile_size=tuple(data["tile_size"]),
+            grid_size=tuple(data["grid_size"]),
+            min_grid_size=tuple(data["min_grid_size"]),
+            max_grid_size=tuple(data["max_grid_size"]),
+        )
+
+    @classmethod
+    def _populate_layers_from_data(cls, layers_data: list[dict], instance: "GridMap"):
+        for layer_data in layers_data:
+            layer = instance.get_layer(layer_data["name"])
+            layer.populate_from_data(layer_data["elements"])
+
+    @classmethod
+    def _setup_concurrency_from_data(cls, layers_data: list[dict], instance: "GridMap"):
+        for layer_data in layers_data:
+            if "concurrent_layers" in layer_data and layer_data["concurrent_layers"]:
+                layer = instance.get_layer(layer_data["name"])
+                concurrent_layer_names: list[str] = layer_data["concurrent_layers"]
+                for concurrent_layer_name in concurrent_layer_names:
+                    concurrent_layer = instance.get_layer(concurrent_layer_name)
+                    layer.add_concurrent_layer(concurrent_layer)
+
     def on_layer_event(self, event_name: str, callback: Callable):
         for layer in self.layers:
             layer.events[event_name].connect(callback, weak=True)

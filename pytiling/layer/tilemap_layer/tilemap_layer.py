@@ -41,6 +41,24 @@ class TilemapLayer(GridLayer):
             "tile_formatted": Signal(),
         }
 
+    def populate_from_data(self, elements_data: list[dict]):
+        """Populate the layer with tiles from a list of data dictionaries."""
+        from ...serialization import element_from_dict
+
+        for element_data in elements_data:
+            element = element_from_dict(element_data)
+            # We don't apply formatting here, as it's often done in a final pass
+            # after the entire map is loaded.
+            self.add_tile(cast("Tile", element), apply_formatting=False)
+
+    def to_dict(self):
+        """Serialize the layer to a dictionary."""
+        data = super().to_dict()
+        data["__class__"] = "TilemapLayer"
+        data["tileset"] = self.tileset.tileset_path
+        # autotile_rules are not serialized, they should be redefined in code after loading.
+        return data
+
     def create_autotile_tile_at(
         self, position: tuple[int, int], name: str, apply_formatting=False, **args
     ):

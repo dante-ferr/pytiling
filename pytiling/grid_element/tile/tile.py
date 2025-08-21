@@ -40,6 +40,40 @@ class Tile(GridElement):
         if apply_formatting:
             self.format()
 
+    def to_dict(self):
+        """Serialize the tile to a dictionary."""
+        data = super().to_dict()
+        data.update(
+            {
+                "display": self.display,
+                "variations": {f"{k[0]},{k[1]}": v for k, v in self.variations.items()},
+            }
+        )
+        return data
+
+    def _from_dict_data(self, data: dict):
+        """Helper to populate tile from a dictionary."""
+        super()._from_dict_data(data)
+        variations = {
+            tuple(map(int, k.split(","))): v
+            for k, v in data.get("variations", {}).items()
+        }
+        self.variations = variations  # type: ignore
+        self.variations_chance_sum = sum(variations.values())
+        if "display" in data:
+            self.display = tuple(data["display"])
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Tile":
+        """Deserialize a tile from a dictionary."""
+        tile = cls(
+            position=tuple(data["position"]),
+            display=tuple(data.get("display", (0, 0))),
+            name=data["name"],
+        )
+        tile._from_dict_data(data)
+        return tile
+
     @property
     def layer(self):
         return cast("TilemapLayer", super().layer)

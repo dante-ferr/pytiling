@@ -32,7 +32,7 @@ class GridLayer:
 
         self.checker = LayerChecker(self)
 
-        self.concurrent_layers: list["GridLayer"] = []
+        self.concurrent_layers: set["GridLayer"] = set()
 
         self._restart_events()
 
@@ -43,9 +43,31 @@ class GridLayer:
             "element_directly_removed": Signal(),
         }
 
+    def populate_from_data(self, elements_data: list[dict]):
+        """Populate the layer with elements from a list of data dictionaries."""
+        from ..serialization import element_from_dict
+
+        for element_data in elements_data:
+            element = element_from_dict(element_data)
+            self.add_element(element)
+
+    def to_dict(self):
+        """Serialize the layer to a dictionary."""
+        elements_data = []
+        for element in self.elements:
+            elements_data.append(element.to_dict())
+
+        return {
+            "__class__": "GridLayer",
+            "name": self.name,
+            "grid_size": self.grid_size,
+            "elements": elements_data,
+            "concurrent_layers": [layer.name for layer in self.concurrent_layers],
+        }
+
     def add_concurrent_layer(self, layer: "GridLayer"):
         """Add a layer to the list of concurrent layers. Tiles from concurrent layers won't be able to be placed on the same position. So the addition of a element on a layer will remove the elements at the same position from its concurrent layers."""
-        self.concurrent_layers.append(layer)
+        self.concurrent_layers.add(layer)
 
     def _concurrent_elements_at(self, position: tuple[int, int]):
         concurrent_elements: list["GridElement"] = []
@@ -108,7 +130,10 @@ class GridLayer:
         )
 
     def _remove_element(self, element: "GridElement"):
-        """Private method to remove an element from the layer's grid. The difference between this method and remove_element resides in the sent event: while this sends a generic element_removed event, remove_element sends a element_directly_removed event."""
+        """Private method to remove an element from the layer's grid. The difference
+        between this method and remove_element resides in the sent event: while this
+        sends a generic element_removed event, remove_element sends a element_directly_removed event.
+        """
         self.grid[element.position[1], element.position[0]] = None
 
         self.events["element_removed"].send(element=element, layer_name=self.name)

@@ -9,6 +9,13 @@ from .tileset.tileset import Tileset
 from .tools.tilemap_border_tracer import TilemapBorderTracer
 from .physics.pymunk_tilemap_physics import PymunkTilemapPhysics
 from .grid_map import GridMap
+from .serialization import (
+    load_map,
+    save_map,
+    register_element_deserializer,
+    register_layer_deserializer,
+    register_map_deserializer,
+)
 from .utils.direction import Direction, direction_vectors, opposite_directions
 
 __all__ = [
@@ -23,6 +30,11 @@ __all__ = [
     "PymunkTilemapPhysics",
     "GridMap",
     "GridElement",
+    "load_map",
+    "save_map",
+    "register_element_deserializer",
+    "register_layer_deserializer",
+    "register_map_deserializer",
     "Direction",
     "direction_vectors",
     "opposite_directions",

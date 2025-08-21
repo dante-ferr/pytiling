@@ -20,6 +20,21 @@ class GridElement:
 
         self._layer: "GridLayer | None" = None
 
+    def to_dict(self):
+        """Serialize the grid element to a dictionary."""
+        return {
+            "__class__": self.__class__.__name__,
+            "position": self.position,
+            "name": self.name,
+            "unique": self.unique,
+            "locked": self.locked,
+        }
+
+    def _from_dict_data(self, data: dict):
+        """Helper to populate grid element from a dictionary."""
+        self.locked = data.get("locked", False)
+        self.unique = data.get("unique", False)
+
     def remove(self):
         """Remove the element from its layer."""
         if self.layer is None:

@@ -10,6 +10,7 @@ class Tileset:
     """This object works over a tileset, mainly to get the tiles from it as byte images."""
 
     def __init__(self, tileset_path: str):
+        self.tileset_path = tileset_path
         self.atlas_image = Image.open(tileset_path)
         self._tile_size: tuple[int, int] | None = None
         self._tile_image_wrappers: np.ndarray[tuple[int, int], Any] | None = None
