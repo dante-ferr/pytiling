@@ -62,7 +62,9 @@ class GridLayer:
             "name": self.name,
             "grid_size": self.grid_size,
             "elements": elements_data,
-            "concurrent_layers": [layer.name for layer in self.concurrent_layers],
+            "concurrent_layers": sorted(
+                [layer.name for layer in self.concurrent_layers]
+            ),
         }
 
     def add_concurrent_layer(self, layer: "GridLayer"):
@@ -322,9 +324,12 @@ class GridLayer:
     @property
     def elements(self) -> list["GridElement"]:
         """Get a list of all elements in the layer."""
-        elements: list["GridElement"] = []
-        self.for_all_elements(lambda element: elements.append(element))
-        return elements
+        # Flatten the grid, filter out None values, and sort by position
+        # to ensure a deterministic order for serialization.
+        # The sort is by x, then y (column-major).
+        valid_elements = [elem for elem in self.grid.flatten() if elem is not None]
+        valid_elements.sort(key=lambda elem: (elem.position[0], elem.position[1]))
+        return valid_elements
 
     def get_elements(self, *names: str) -> list["GridElement"]:
         """Get a list of elements with any of the given names."""

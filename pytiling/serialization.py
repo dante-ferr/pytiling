@@ -121,7 +121,7 @@ def load_map(filepath: str) -> "GridMap":
 def save_map(grid_map: "GridMap", filepath: str):
     """Save a map to a JSON file."""
     with open(filepath, "w") as f:
-        json.dump(grid_map.to_dict(), f, indent=2)
+        json.dump(grid_map.to_dict(), f, indent=2, sort_keys=True)
 
 
 _initialize_pytiling_deserializers()
