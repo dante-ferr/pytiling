@@ -15,11 +15,6 @@ class Variation(TypedDict):
     chance: float
 
 
-DEFAULT_SHALLOW_TILE_VARIATIONS_FILENAME = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "default_shallow_tile_variations.json"
-)
-
-
 class AutotileTile(Tile):
     """A class representing an autotile tile. It extends the Tile class and adds the ability to change its display based on the rules it has. Each rule defines a specific display based on the tile's neighbors."""
 
@@ -27,7 +22,6 @@ class AutotileTile(Tile):
         self,
         position: tuple[int, int],
         name: str,
-        default_shallow_tile_variations: bool = False,
     ):
         super().__init__(position, name=name)
 
@@ -36,20 +30,10 @@ class AutotileTile(Tile):
 
         self._restart_events()
 
-        if default_shallow_tile_variations:
-            self.set_default_shallow_tile_variations()
-
     def _restart_events(self):
         self.events: dict[str, Signal] = {
             "post_autotile": Signal(),
         }
-
-    def set_default_shallow_tile_variations(self):
-        def _callback(sender, tile: "AutotileTile"):
-            if tile.is_shallow:
-                tile.add_variations_from_json(DEFAULT_SHALLOW_TILE_VARIATIONS_FILENAME)
-
-        self.events["post_autotile"].connect(_callback, weak=False)
 
     def to_dict(self):
         """Serialize the autotile tile to a dictionary."""
@@ -96,6 +80,7 @@ class AutotileTile(Tile):
 
     def _autotile_calculate(self, neighbors_bool_grid):
         """Change the tile's display based on the rules it has. Returns True if the tile's display has changed, or False otherwise."""
+        # Reset the tile's variations, as the autotile-assigned display overrides any variation previously set.
         self.reset_variations()
 
         def find_display(rule_index: int):

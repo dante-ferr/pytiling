@@ -9,7 +9,9 @@ from pytiling.grid_element.tile import Tile
 from pytiling.grid_element.tile.autotile import (
     AutotileTile,
     AutotileRule,
-    default_rules,
+)
+from pytiling.grid_element.tile.autotile.default_rules import (
+    detailed_default_autotile_rules,
 )
 from blinker import Signal
 
@@ -22,17 +24,35 @@ class TilemapLayer(GridLayer):
 
     autotile_rules: dict[str, list["AutotileRule"]]
 
-    def __init__(self, name: str, tileset: Tileset):
+    def __init__(
+        self,
+        name: str,
+        tileset: Tileset,
+        autotile_rules: (
+            Literal["detailed"] | dict[str, list["AutotileRule"]]
+        ) = "detailed",
+    ):
         super().__init__(name)
 
         self.name = name
         self.tileset = tileset
-        self.autotile_rules = {}
+
+        if isinstance(autotile_rules, str):
+            self.autotile_rules = {
+                "default": self._get_default_autotile_rules(autotile_rules)
+            }
+        else:
+            self.autotile_rules = autotile_rules
+
         self.autotile_neighbor_processor = TilemapLayerNeighborProcessor(self)
 
         self.formatter = TilemapLayerFormatter(self)
 
         self._restart_events()
+
+    def _get_default_autotile_rules(self, rules_type: Literal["detailed"]):
+        if rules_type == "detailed":
+            return detailed_default_autotile_rules
 
     def _restart_events(self):
         super()._restart_events()
@@ -96,7 +116,7 @@ class TilemapLayer(GridLayer):
     def _handle_add_autotile_tile(self, tile: "AutotileTile", apply_formatting: bool):
         """Handle adding an autotile tile to the layer."""
         if tile.name not in self.autotile_rules:
-            self.autotile_rules[tile.name] = default_rules
+            self.autotile_rules[tile.name] = self.autotile_rules["default"]
         tile.rules = self.autotile_rules[tile.name]
 
         if apply_formatting:

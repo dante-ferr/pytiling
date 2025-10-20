@@ -165,7 +165,7 @@ class GridMap:
         direction: Direction,
         size=1,
     ):
-        """Expand the grid in the specified direction."""
+        """Expand the grid in the specified direction. Returns the new positions into a list."""
         shift = self._get_shift(direction, size)
         new_size = (
             self.grid_size[0] + shift[0],
@@ -179,8 +179,9 @@ class GridMap:
         for layer in self.layers:
             layer.expand_towards(direction, size)
 
+        old_grid_size = self.grid_size
         self.grid_size = new_size
-        new_positions = self.get_edge_positions(direction)
+        new_positions = self.get_edge_positions(direction, size=size)
 
         self.events["expanded"].send(
             direction=direction, size=size, new_positions=new_positions
@@ -205,14 +206,14 @@ class GridMap:
         if not self._can_reduce_towards(new_size):
             return
 
+        removed_positions = self.get_edge_positions(direction, size=size)
         for layer in self.layers:
             layer.reduce_towards(direction, size)
 
-        removed_positions = self.get_edge_positions(direction)
         self.grid_size = new_size
 
         self.events["reducted"].send(
-            direction=direction, size=size, removed_positions=removed_positions
+            direction=direction, size=size, removed_positions=list(removed_positions)
         )
 
         return removed_positions
@@ -231,28 +232,35 @@ class GridMap:
         )
 
     def get_edge_positions(
-        self, edge: Union[Direction, Literal["all"]] = "all", size=1, retreat=0
+        self,
+        edge: Union[Direction, Literal["all"]] = "all",
+        size=1,
+        retreat=0,
     ):
-        """Get the positions of the edges of the layer."""
-        # TODO: make it support sizes greater than 1
+        """
+        Get the positions of the edges of the layer.
+        When used for expansion, old_grid_size should be provided to get the newly added positions.
+        """
         width, height = self.grid_size
         edge_positions: set[tuple[int, int]] = set()
 
-        if edge in ("left", "all"):
-            for y in range(height):
-                edge_positions.add((retreat, y))
+        for i in range(size):
+            current_retreat = retreat + i
+            if edge in ("left", "all"):
+                for y in range(height):
+                    edge_positions.add((current_retreat, y))
 
-        if edge in ("right", "all"):
-            for y in range(height):
-                edge_positions.add((width - 1 - retreat, y))
+            if edge in ("right", "all"):
+                for y in range(height):
+                    edge_positions.add((width - 1 - current_retreat, y))
 
-        if edge in ("bottom", "all"):
-            for x in range(width):
-                edge_positions.add((x, height - 1 - retreat))
+            if edge in ("bottom", "all"):
+                for x in range(width):
+                    edge_positions.add((x, height - 1 - current_retreat))
 
-        if edge in ("top", "all"):
-            for x in range(width):
-                edge_positions.add((x, retreat))
+            if edge in ("top", "all"):
+                for x in range(width):
+                    edge_positions.add((x, current_retreat))
 
         return list(edge_positions)
 
