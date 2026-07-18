@@ -11,6 +11,7 @@ from pytiling.utils import (
 )
 from typing import TYPE_CHECKING, Literal, Union, cast
 from blinker import Signal
+from pytiling.grid_element import unique_elements
 
 if TYPE_CHECKING:
     from ..grid_map import GridMap
@@ -71,14 +72,18 @@ class GridLayer:
         """Add a layer to the list of concurrent layers. Tiles from concurrent layers won't be able to be placed on the same position. So the addition of a element on a layer will remove the elements at the same position from its concurrent layers."""
         self.concurrent_layers.add(layer)
 
-    def _concurrent_elements_at(self, position: tuple[int, int]):
+    def _concurrent_elements_at(self, positions: list[tuple[int, int]]):
         concurrent_elements: list["GridElement"] = []
 
-        for concurrent_layer in self.concurrent_layers:
-            element = concurrent_layer.get_element_at(position)
-            if element:
-                concurrent_elements.append(element)
-        return concurrent_elements
+        for position in positions:
+            for concurrent_layer in self.concurrent_layers:
+                element = concurrent_layer.get_element_at(position)
+                if element:
+                    concurrent_elements.append(element)
+        return unique_elements(concurrent_elements)
+
+    def _elements_in_footprint(self, positions: list[tuple[int, int]]):
+        return unique_elements(self.get_element_at(position) for position in positions)
 
     def initialize_grid(self, size: tuple[int, int]):
         """Initialize the grid of the layer."""
@@ -86,20 +91,27 @@ class GridLayer:
             self._grid = np.empty((size[1], size[0]), dtype=object)
 
     def add_element(self, element: "GridElement"):
-        """Add an element to the layer's grid."""
-        self.checker.check_position(element.position)
+        """Add an element to the layer's grid, claiming its full footprint."""
+        footprint = element.footprint_positions()
+        for position in footprint:
+            self.checker.check_position(position)
 
-        same_layer_element_in_place = self.get_element_at(element.position)
-        if same_layer_element_in_place is not None:
-            if same_layer_element_in_place.locked:
+        same_layer_elements = self._elements_in_footprint(footprint)
+        for same_layer_element in same_layer_elements:
+            if same_layer_element.locked:
                 return False
-            self._remove_element(element)
 
-        concurrent_elements_in_place = self._concurrent_elements_at(element.position)
+        concurrent_elements_in_place = self._concurrent_elements_at(footprint)
         for concurrent_element in concurrent_elements_in_place:
-            # If the element is locked, it can't be removed. Also, this function cannot add the element, as it conflicts with the concurrent element.
+            # If the element is locked, it can't be removed. Also, this function cannot
+            # add the element, as it conflicts with the concurrent element.
             if concurrent_element.locked:
                 return False
+
+        for same_layer_element in same_layer_elements:
+            self._remove_element(same_layer_element)
+
+        for concurrent_element in concurrent_elements_in_place:
             concurrent_element.remove()
 
         if element.unique:
@@ -108,7 +120,8 @@ class GridLayer:
                 namesake.remove()
 
         element.layer = self
-        self.grid[element.position[1], element.position[0]] = element
+        for position in footprint:
+            self.grid[position[1], position[0]] = element
 
         self.events["element_created"].send(element=element)
 
@@ -136,7 +149,10 @@ class GridLayer:
         between this method and remove_element resides in the sent event: while this
         sends a generic element_removed event, remove_element sends a element_directly_removed event.
         """
-        self.grid[element.position[1], element.position[0]] = None
+        for position in element.footprint_positions():
+            if self.checker.position_is_valid(position):
+                if self.grid[position[1], position[0]] is element:
+                    self.grid[position[1], position[0]] = None
 
         self.events["element_removed"].send(element=element, layer_name=self.name)
 
@@ -245,14 +261,9 @@ class GridLayer:
         self.grid = np.resize(self.grid, size)
 
     def for_all_elements(self, callback: Callable):
-        """Loops over each element in the layer's grid, calling the given callback."""
-
-        def position_callback(position):
-            element = self.get_element_at(position)
-            if element is not None:
-                callback(self.get_element_at(position))
-
-        self.grid_map.for_grid_position(position_callback)
+        """Loops over each unique element in the layer's grid, calling the given callback."""
+        for element in self.elements:
+            callback(element)
 
     @cached_property
     def layer_above(self) -> "GridLayer | None":
@@ -292,16 +303,22 @@ class GridLayer:
             self.shift_elements_towards(direction, size)
 
     def shift_elements_towards(self, direction: Direction, size: int):
-        """Shift the grid in the specified direction."""
-        for x in range(self.grid_size[0]):
-            for y in range(self.grid_size[1]):
-                element = self.grid[y, x]
-                if element is None:
-                    continue
-                element.position = (
-                    element.position[0] + direction_vectors[direction][0] * size,
-                    element.position[1] + direction_vectors[direction][1] * size,
-                )
+        """Shift elements in the specified direction and rewrite footprint occupancy."""
+        elements = self.elements
+        for element in elements:
+            for position in element.footprint_positions():
+                if self.checker.position_is_valid(position):
+                    if self.grid[position[1], position[0]] is element:
+                        self.grid[position[1], position[0]] = None
+
+        dx, dy = direction_vectors[direction]
+        for element in elements:
+            element.position = (
+                element.position[0] + dx * size,
+                element.position[1] + dy * size,
+            )
+            for position in element.footprint_positions():
+                self.grid[position[1], position[0]] = element
 
     def get_edge_elements(
         self, edge: Union[Direction, Literal["all"]] = "all", size=1, retreat=0
@@ -323,11 +340,10 @@ class GridLayer:
 
     @property
     def elements(self) -> list["GridElement"]:
-        """Get a list of all elements in the layer."""
-        # Flatten the grid, filter out None values, and sort by position
+        """Get a list of all unique elements in the layer."""
+        # Deduplicate multi-cell occupancy, then sort by bottom-left position
         # to ensure a deterministic order for serialization.
-        # The sort is by x, then y (column-major).
-        valid_elements = [elem for elem in self.grid.flatten() if elem is not None]
+        valid_elements = unique_elements(self.grid.flatten())
         valid_elements.sort(key=lambda elem: (elem.position[0], elem.position[1]))
         return valid_elements
 

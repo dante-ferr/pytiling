@@ -17,6 +17,7 @@ from .serialization import (
     register_map_deserializer,
 )
 from .utils.direction import Direction, direction_vectors, opposite_directions
+from .grid_element import footprint_positions, top_left_position
 
 __all__ = [
     "AutotileRule",
@@ -38,4 +39,6 @@ __all__ = [
     "Direction",
     "direction_vectors",
     "opposite_directions",
+    "footprint_positions",
+    "top_left_position",
 ]
