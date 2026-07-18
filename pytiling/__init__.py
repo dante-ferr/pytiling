@@ -1,6 +1,7 @@
 from .grid_element import GridElement
 from .grid_element.tile.autotile.autotile_tile import AutotileTile
 from .grid_element.tile.autotile.autotile_rule import AutotileRule
+from .grid_element.tile.autotile.preview import preview_autotile_displays
 from .grid_element.tile import Tile
 from .layer.tilemap_layer import TilemapLayer
 from .layer import GridLayer
@@ -41,4 +42,5 @@ __all__ = [
     "opposite_directions",
     "footprint_positions",
     "top_left_position",
+    "preview_autotile_displays",
 ]

@@ -83,11 +83,27 @@ class AutotileTile(Tile):
         # Reset the tile's variations, as the autotile-assigned display overrides any variation previously set.
         self.reset_variations()
 
+        previous_display = self.display
+        self.display = AutotileTile.display_from_neighbor_grid(
+            neighbors_bool_grid, self.layer.autotile_rules[self.name]
+        )
+        return self.display != previous_display
+
+    @staticmethod
+    def display_from_neighbor_grid(
+        neighbors_bool_grid, rules: list["AutotileRule"]
+    ) -> tuple[int, int]:
+        """Pick a tileset display by matching ``neighbors_bool_grid`` against rules.
+
+        Same matching used by live ``format()`` — usable for dry-run / ghost previews
+        without placing tiles on the map.
+        """
+
         def find_display(rule_index: int):
-            if rule_index >= len(self.rules):
+            if rule_index >= len(rules):
                 warnings.warn("No display found", UserWarning)
                 return (0, 0)
-            rule = self.layer.autotile_rules[self.name][rule_index]
+            rule = rules[rule_index]
 
             for y, row in enumerate(rule.rule_matrix):
                 for x, cell in enumerate(row):
@@ -104,9 +120,7 @@ class AutotileTile(Tile):
 
             return rule.display
 
-        previous_display = self.display
-        self.display = find_display(0)
-        return self.display != previous_display
+        return find_display(0)
 
     @property
     def is_deep(self):

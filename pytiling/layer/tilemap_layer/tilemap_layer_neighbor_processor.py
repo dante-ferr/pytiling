@@ -44,6 +44,35 @@ class TilemapLayerNeighborProcessor:
         self._for_neighbor_of(neighbor_callback, tile, radius)
         return neighbors
 
+    @staticmethod
+    def neighbors_bool_grid_from_occupancy(
+        position: tuple[int, int],
+        occupied: set[tuple[int, int]],
+        position_is_valid,
+        radius: int = 1,
+        adjacency_rule: Literal["eight", "four"] = "eight",
+    ):
+        """Build a neighbor bool grid from a virtual occupancy set (no live tiles).
+
+        Out-of-grid cells count as neighbors, matching ``get_neighbors_bool_grid``.
+        """
+        if adjacency_rule != "eight":
+            raise ValueError("Only eight-adjacency occupancy grids are supported")
+
+        matrix_size = radius * 2 + 1
+        neighbors = np.full((matrix_size, matrix_size), False)
+        cx, cy = position
+
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
+                if dx == 0 and dy == 0:
+                    continue
+                nx, ny = cx + dx, cy + dy
+                if not position_is_valid((nx, ny)) or (nx, ny) in occupied:
+                    neighbors[dy + radius, dx + radius] = True
+
+        return neighbors
+
     def get_neighbors_of(self, tile: "Tile", radius: int = 1):
         matrix_size = self._get_matrix_size(radius)
         neighbors = np.empty((matrix_size, matrix_size), dtype=object)
