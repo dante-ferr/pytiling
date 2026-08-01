@@ -78,6 +78,11 @@ def _initialize_pytiling_deserializers():
 
         return AutotileTile.from_dict(data)
 
+    def _deserialize_attached_tile(data):
+        from .grid_element.tile.attached import AttachedTile
+
+        return AttachedTile.from_dict(data)
+
     def _deserialize_grid_layer(data, tilesets):
         from .layer import GridLayer
 
@@ -105,6 +110,7 @@ def _initialize_pytiling_deserializers():
 
     register_element_deserializer("Tile", _deserialize_tile)
     register_element_deserializer("AutotileTile", _deserialize_autotile_tile)
+    register_element_deserializer("AttachedTile", _deserialize_attached_tile)
     register_layer_deserializer("GridLayer", _deserialize_grid_layer)
     register_layer_deserializer("TilemapLayer", _deserialize_tilemap_layer)
     register_map_deserializer("GridMap", _deserialize_grid_map)

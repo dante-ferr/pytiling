@@ -1,4 +1,5 @@
 from .grid_element import GridElement
+from .grid_element.tile.attached import AttachedTile
 from .grid_element.tile.autotile.autotile_tile import AutotileTile
 from .grid_element.tile.autotile.autotile_rule import AutotileRule
 from .grid_element.tile.autotile.preview import preview_autotile_displays
@@ -21,6 +22,7 @@ from .utils.direction import Direction, direction_vectors, opposite_directions
 from .grid_element import footprint_positions, top_left_position
 
 __all__ = [
+    "AttachedTile",
     "AutotileRule",
     "AutotileTile",
     "Tile",

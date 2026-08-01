@@ -1,11 +1,13 @@
 from typing import TYPE_CHECKING, Literal, cast, Sequence, Callable
 from .grid_map import GridMap
+from .utils import direction_vectors
 
 if TYPE_CHECKING:
     from .tileset.tileset import Tileset
     from .layer.tilemap_layer import TilemapLayer
     from .layer.grid_layer import GridLayer
     from .grid_element.tile import Tile
+    from .grid_element import GridElement
 
 
 class Tilemap(GridMap):
@@ -42,6 +44,50 @@ class Tilemap(GridMap):
         self._add_tileset(layer.tileset)
 
         super().add_layer(layer, position)
+
+        layer.events["element_created"].connect(
+            self._on_element_created, weak=False
+        )
+        layer.events["element_removed"].connect(
+            self._on_element_removed, weak=False
+        )
+
+    def _on_element_created(self, sender, element: "GridElement"):
+        self._maintain_attached_tiles(element, removed=False)
+
+    def _on_element_removed(self, sender, element: "GridElement", layer_name: str):
+        self._maintain_attached_tiles(element, removed=True)
+
+    def _maintain_attached_tiles(self, changed: "GridElement", removed: bool):
+        """Keep attached tiles consistent after an element was added or removed.
+
+        - An element placed on top of an attached tile buries it (removed).
+        - Attached tiles adjacent to the changed footprint reorient; orphaned
+          ones (no master left) are removed.
+        """
+        from .grid_element.tile.attached import AttachedTile
+
+        footprint = changed.footprint_positions()
+
+        if not removed and not isinstance(changed, AttachedTile):
+            for position in footprint:
+                for layer in self.layers:
+                    element = layer.get_element_at(position)
+                    if isinstance(element, AttachedTile):
+                        element.remove()
+
+        seen: set[int] = set()
+        for position in footprint:
+            for dx, dy in direction_vectors.values():
+                neighbor_position = (position[0] + dx, position[1] + dy)
+                for layer in self.layers:
+                    element = layer.get_element_at(neighbor_position)
+                    if isinstance(element, AttachedTile) and id(element) not in seen:
+                        seen.add(id(element))
+                        if element.master_orientation() is None:
+                            element.remove()
+                        else:
+                            element.format()
 
     @property
     def layers(self) -> Sequence["TilemapLayer"]:

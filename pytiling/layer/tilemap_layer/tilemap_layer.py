@@ -6,6 +6,7 @@ from .tilemap_layer_neighbor_processor import TilemapLayerNeighborProcessor
 from functools import cached_property
 from pytiling.utils import Direction
 from pytiling.grid_element.tile import Tile
+from pytiling.grid_element.tile.attached import AttachedTile
 from pytiling.grid_element.tile.autotile import (
     AutotileTile,
     AutotileRule,
@@ -100,8 +101,25 @@ class TilemapLayer(GridLayer):
         tile_added = self.add_tile(tile, apply_formatting)
         return tile if tile_added else None
 
+    def create_attached_tile_at(
+        self,
+        position: tuple[int, int],
+        master_name: str,
+        name="",
+        apply_formatting=False,
+        **args
+    ):
+        """Create an attached tile at a given position. Fails (returns None) when
+        no tile named ``master_name`` is 4-adjacent to the position."""
+        tile = AttachedTile(position, master_name, name, **args)
+        tile_added = self.add_tile(tile, apply_formatting)
+        return tile if tile_added else None
+
     def add_tile(self, tile: "Tile", apply_formatting=False):
         """Add a tile to the layer's grid. Also formats the tile and its potential neighbors. Returns True if the tile was added, False if it was not."""
+        if isinstance(tile, AttachedTile) and tile.master_orientation(self) is None:
+            return False
+
         if not super().add_element(tile):
             return False
 
